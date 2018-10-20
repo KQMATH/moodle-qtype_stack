@@ -9,149 +9,6 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
     const FEEDBACK_ERROR_DELAY = 1000;
     const WAITING_TIMER_DELAY = 1000;
 
-    let errorTimer;
-    let waitingTimer;
-    let converters = new Map();
-
-    function convert(latex, options, stackInputID) {
-        let result = '';
-
-        let converter = converters.get(stackInputID);
-        if (typeof converter === "undefined") {
-            try {
-                converter = new Tex2Max.TeX2Max(options);
-                converters.set(stackInputID, converter);
-            } catch (error) {
-                renderErrorFeedback(error.message, stackInputID);
-                return;
-            }
-        }
-
-        clearTimeout(errorTimer);
-
-        if (!latex) {
-            hideTeX2MaXFeedback(stackInputID);
-
-            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-            let $stackValidationFeedback = $(stackValidationFeedback);
-            $stackValidationFeedback.hide();
-
-            return result;
-        }
-
-        try {
-            result = converter.toMaxima(latex);
-            hideTeX2MaXFeedback(stackInputID);
-
-        } catch (error) {
-            renderErrorFeedback(error.message, stackInputID);
-        }
-
-        return result;
-    }
-
-    function removeAllValidationClasses(selector) {
-        let validationFeedback = document.getElementById(selector);
-        let $validationFeedback = $(validationFeedback);
-        $validationFeedback.removeClass('empty');
-        $validationFeedback.removeClass('error');
-        $validationFeedback.removeClass('loading');
-        $validationFeedback.removeClass('waiting');
-    }
-
-    function resetStackValidation(stackInputID) {
-        let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-        let $stackValidationFeedback = $(stackValidationFeedback);
-
-        $stackValidationFeedback.removeAttr("style");
-    }
-
-    function hideTeX2MaXFeedback(stackInputID) {
-        let existingFeedback = document.getElementById(stackInputID + '_tex2max');
-        let $existingFeedback = $(existingFeedback);
-
-        let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-
-        if (stackValidationFeedback.style.display !== "") {
-            $existingFeedback.toggleClass('waiting', true);
-            waitingTimer = setTimeout(() => {
-                removeAllValidationClasses(stackInputID + '_tex2max');
-                $existingFeedback.toggleClass('empty', true);
-                resetStackValidation(stackInputID);
-            }, WAITING_TIMER_DELAY);
-
-            setTimeout(function () {
-                removeAllValidationClasses(stackInputID + '_tex2max');
-                $existingFeedback.toggleClass('waiting', true);
-            }, 0);
-
-        } else {
-            $existingFeedback.toggleClass('empty', true);
-        }
-    }
-
-    function renderErrorFeedback(errorMessage, stackInputID) {
-        clearTimeout(waitingTimer);
-
-        let existingFeedback = document.getElementById(stackInputID + '_tex2max');
-        let $existingFeedback = $(existingFeedback);
-        if (existingFeedback && !$existingFeedback.hasClass('empty')) {
-                removeAllValidationClasses(stackInputID + '_tex2max');
-                $existingFeedback.toggleClass('waiting', true);
-        }
-
-        errorTimer = setTimeout(() => {
-            renderTeX2MaXFeedback(errorMessage, stackInputID)
-        }, FEEDBACK_ERROR_DELAY);
-    }
-
-    function renderTeX2MaXFeedback(errorMessage, stackInputID) {
-        if (!errorMessage) errorMessage = "";
-
-        let feedbackMessage = "This answer is invalid.";
-        let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-        let $stackValidationFeedback = $(stackValidationFeedback);
-        $stackValidationFeedback.hide();
-
-        let existingFeedback = document.getElementById(stackInputID + '_tex2max');
-        if (existingFeedback) {
-            removeAllValidationClasses(stackInputID + '_tex2max');
-
-            let existingErrorMessageParagraph = document.getElementById(stackInputID + '_errormessage');
-            existingErrorMessageParagraph.innerHTML = errorMessage;
-
-        } else {
-            let feedbackWrapper = document.createElement('div');
-            feedbackWrapper.setAttribute('class', 'tex2max-feedback-wrapper');
-            feedbackWrapper.setAttribute('id', stackInputID + '_tex2max');
-
-            let feedbackMessageParagraph = document.createElement('p');
-            let errorMessageParagraph = document.createElement('p');
-            errorMessageParagraph.setAttribute('id', stackInputID + '_errormessage');
-
-            feedbackMessageParagraph.innerHTML = feedbackMessage;
-            errorMessageParagraph.innerHTML = errorMessage;
-
-            feedbackWrapper.append(feedbackMessageParagraph);
-            feedbackWrapper.append(errorMessageParagraph);
-
-            $stackValidationFeedback.after(feedbackWrapper);
-        }
-    }
-
-    function showOrHideCheckButton(inputIDs, prefix) {
-        for (let i = 0; i < inputIDs.length; i++) {
-            let $outerdiv = $(document.getElementById(inputIDs[i])).parents('div.que.stack').first();
-            if ($outerdiv && ($outerdiv.hasClass('dfexplicitvaildate') || $outerdiv.hasClass('dfcbmexplicitvaildate'))) {
-                // With instant validation, we don't need the Check button, so hide it.
-                let button = $outerdiv.find('.im-controls input.submit').first();
-                if (button.attr('id') === prefix + '-submit') {
-                    button.hide();
-                }
-            }
-        }
-    }
-
     const DEFAULT_TEX2MAX_OPTIONS = {
         onlySingleVariables: false,
         handleEquation: false,
@@ -161,106 +18,70 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
         debugging: false
     };
 
-    function formatOptionsObj(rawOptions) {
-        let options = {};
 
-        for (let key in rawOptions) {
-            if (!rawOptions.hasOwnProperty(key)) continue;
+    class wysiwyg {
+        constructor(questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions) {
+            this.errorTimer;
+            this.waitingTimer;
 
-            let value = rawOptions[key];
-            switch (key) {
-                case "singlevars":
-                    if (value === '1') {
-                        options.onlySingleVariables = true;
-                    } else {
-                        options.onlySingleVariables = false;
-                    }
-                    break;
-                case "addtimessign":
-                    if (value === '1') {
-                        options.addTimesSign = true;
-                    } else {
-                        options.addTimesSign = false;
-                    }
-                    break;
+            this.editorVisible = true;
+            console.log(this.editorVisible)
+            this.inputs = [];
+            this.controls;
+            this.converters = new Map();
 
-                default :
-                    break;
-            }
+            this.questionid = questionid;
+            this.prefix = prefix;
+            this.stackInputIDs = stackInputIDs;
+            this.latexInputIDs = latexInputIDs;
+            this.latexResponses = latexResponses;
+            this.questionOptions = questionOptions;
+            this.debug = debug;
+
+            this.initialize();
         }
 
-        options = Object.assign(DEFAULT_TEX2MAX_OPTIONS, options);
-        return options;
-    }
+        initialize() {
+            this.addEventListeners();
 
-    function buildInputControls(mode) {
-        if (!mode) throw new Error('No mathinputmode is set');
-
-        let controls = new VisualMath.ControlList('#controls_wrapper');
-        let controlNames = [];
-
-        switch (mode) {
-            case 'simple':
-                controlNames = ['sqrt', 'divide', 'pi', 'caret'];
-                controls.enable(controlNames);
-                break;
-            case 'normal':
-                controlNames = ['sqrt', 'divide', 'nchoosek', 'pi', 'caret'];
-                controls.enable(controlNames);
-                break;
-            case 'experimental':
-                controls.enableAll();
-                break;
-            case 'none':
-                break;
-            default:
-                break;
-        }
-    }
-
-
-    return {
-        initialize: (debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions) => {
-
-            if (!stackInputIDs.length > 0) return;
-
-            let options = formatOptionsObj(questionOptions);
+            let options = this.formatOptionsObj(this.questionOptions);
             let readOnly = false;
 
-            showOrHideCheckButton(stackInputIDs, prefix);
+            this.showOrHideCheckButton(this.stackInputIDs, this.prefix);
 
-            for (let i = 0; i < stackInputIDs.length; i++) {
+            for (let i = 0; i < this.stackInputIDs.length; i++) {
                 let $stackInputDebug, $latexInputDebug;
 
-                let latexInput = document.getElementById(latexInputIDs[i]);
+                let latexInput = document.getElementById(this.latexInputIDs[i]);
                 let $latexInput = $(latexInput);
 
-                let stackInput = document.getElementById(stackInputIDs[i]);
+                let stackInput = document.getElementById(this.stackInputIDs[i]);
                 let $stackInput = $(stackInput);
 
                 let wrapper = document.createElement('div');
                 $stackInput.wrap(wrapper);
                 let $parent = $stackInput.parent();
 
-                if (debug) {
-                    let stackInputDebug = document.getElementById(stackInputIDs[i] + '_debug');
+                if (this.debug) {
+                    let stackInputDebug = document.getElementById(this.stackInputIDs[i] + '_debug');
                     $stackInputDebug = $(stackInputDebug);
 
-                    let latexInputDebug = document.getElementById(latexInputIDs[i] + '_debug');
+                    let latexInputDebug = document.getElementById(this.latexInputIDs[i] + '_debug');
                     $latexInputDebug = $(latexInputDebug);
                 }
 
-                let input = new VisualMath.Input('#' + $.escapeSelector(stackInputIDs[i]), $parent);
+                let input = new VisualMath.Input('#' + $.escapeSelector(this.stackInputIDs[i]), $parent);
+                this.inputs.push(input); // Register the new input
                 input.$input.hide();
 
                 if (!input.$input.prop('readonly')) {
                     input.onEdit = ($input, field) => {
-                        $input.val(convert(field.latex(), options, stackInputIDs[i]));
+                        $input.val(this.convert(field.latex(), options, this.stackInputIDs[i]));
                         $latexInput.val(field.latex());
                         $input.get(0).dispatchEvent(new Event('change')); // Event firing needs to be on a vanilla dom object.
 
-                        if (debug) {
-                            $stackInputDebug.html(convert(field.latex(), options, stackInputIDs[i]));
+                        if (this.debug) {
+                            $stackInputDebug.html(this.convert(field.latex(), options, this.stackInputIDs[i]));
                             $latexInputDebug.html(field.latex());
                         }
                     };
@@ -273,19 +94,253 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 // Set the previous step attempt data or autosaved (mod_quiz) value to the MathQuill field.
                 if ($latexInput.val()) {
                     input.field.write($latexInput.val());
-                    convert($latexInput.val(), options, stackInputIDs[i])
+                    this.convert($latexInput.val(), options, this.stackInputIDs[i])
 
-                } else if (latexResponses[i] !== null && latexResponses[i] !== "") {
-                    input.field.write(latexResponses[i]);
-                    convert(latexResponses[i], options, stackInputIDs[i])
+                } else if (this.latexResponses[i] !== null && this.latexResponses[i] !== "") {
+                    input.field.write(this.latexResponses[i]);
+                    this.convert(this.latexResponses[i], options, this.stackInputIDs[i])
                 }
             }
 
 
             if (!readOnly) {
-                buildInputControls(questionOptions['mathinputmode']);
+                this.buildInputControls(this.questionOptions['mathinputmode']);
             }
 
+        }
+
+        convert(latex, options, stackInputID) {
+            let result = '';
+
+            let converter = this.converters.get(stackInputID);
+            if (typeof converter === "undefined") {
+                try {
+                    converter = new Tex2Max.TeX2Max(options);
+                    this.converters.set(stackInputID, converter);
+                } catch (error) {
+                    this.renderErrorFeedback(error.message, stackInputID);
+                    return;
+                }
+            }
+
+            clearTimeout(this.errorTimer);
+
+            if (!latex) {
+                this.hideTeX2MaXFeedback(stackInputID);
+
+                let stackValidationFeedback = document.getElementById(stackInputID + '_val');
+                let $stackValidationFeedback = $(stackValidationFeedback);
+                $stackValidationFeedback.hide();
+
+                return result;
+            }
+
+            try {
+                result = converter.toMaxima(latex);
+                this.hideTeX2MaXFeedback(stackInputID);
+
+            } catch (error) {
+                this.renderErrorFeedback(error.message, stackInputID);
+            }
+
+            return result;
+        }
+
+        removeAllValidationClasses(selector) {
+            let validationFeedback = document.getElementById(selector);
+            let $validationFeedback = $(validationFeedback);
+            $validationFeedback.removeClass('empty');
+            $validationFeedback.removeClass('error');
+            $validationFeedback.removeClass('loading');
+            $validationFeedback.removeClass('waiting');
+        }
+
+        resetStackValidation(stackInputID) {
+            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
+            let $stackValidationFeedback = $(stackValidationFeedback);
+
+            $stackValidationFeedback.removeAttr("style");
+        }
+
+        hideTeX2MaXFeedback(stackInputID) {
+            let existingFeedback = document.getElementById(stackInputID + '_tex2max');
+            let $existingFeedback = $(existingFeedback);
+
+            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
+
+            let parent = this;
+            if (stackValidationFeedback.style.display !== "") {
+                $existingFeedback.toggleClass('waiting', true);
+                parent.waitingTimer = setTimeout(() => {
+                    parent.removeAllValidationClasses(stackInputID + '_tex2max');
+                    $existingFeedback.toggleClass('empty', true);
+                    parent.resetStackValidation(stackInputID);
+                }, WAITING_TIMER_DELAY);
+
+                setTimeout(function () {
+                    parent.removeAllValidationClasses(stackInputID + '_tex2max');
+                    $existingFeedback.toggleClass('waiting', true);
+                }, 0);
+
+            } else {
+                $existingFeedback.toggleClass('empty', true);
+            }
+        }
+
+        renderErrorFeedback(errorMessage, stackInputID) {
+            clearTimeout(this.waitingTimer);
+
+            let existingFeedback = document.getElementById(stackInputID + '_tex2max');
+            let $existingFeedback = $(existingFeedback);
+            if (existingFeedback && !$existingFeedback.hasClass('empty')) {
+                this.removeAllValidationClasses(stackInputID + '_tex2max');
+                $existingFeedback.toggleClass('waiting', true);
+            }
+
+            this.errorTimer = setTimeout(() => {
+                this.renderTeX2MaXFeedback(errorMessage, stackInputID)
+            }, FEEDBACK_ERROR_DELAY);
+        }
+
+
+        renderTeX2MaXFeedback(errorMessage, stackInputID) {
+            if (!errorMessage) errorMessage = "";
+
+            let feedbackMessage = "This answer is invalid.";
+            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
+            let $stackValidationFeedback = $(stackValidationFeedback);
+            $stackValidationFeedback.hide();
+
+            let existingFeedback = document.getElementById(stackInputID + '_tex2max');
+            if (existingFeedback) {
+                this.removeAllValidationClasses(stackInputID + '_tex2max');
+
+                let existingErrorMessageParagraph = document.getElementById(stackInputID + '_errormessage');
+                existingErrorMessageParagraph.innerHTML = errorMessage;
+
+            } else {
+                let feedbackWrapper = document.createElement('div');
+                feedbackWrapper.setAttribute('class', 'tex2max-feedback-wrapper');
+                feedbackWrapper.setAttribute('id', stackInputID + '_tex2max');
+
+                let feedbackMessageParagraph = document.createElement('p');
+                let errorMessageParagraph = document.createElement('p');
+                errorMessageParagraph.setAttribute('id', stackInputID + '_errormessage');
+
+                feedbackMessageParagraph.innerHTML = feedbackMessage;
+                errorMessageParagraph.innerHTML = errorMessage;
+
+                feedbackWrapper.append(feedbackMessageParagraph);
+                feedbackWrapper.append(errorMessageParagraph);
+
+                $stackValidationFeedback.after(feedbackWrapper);
+            }
+        }
+
+        showOrHideCheckButton(inputIDs, prefix) {
+            for (let i = 0; i < inputIDs.length; i++) {
+                let $outerdiv = $(document.getElementById(inputIDs[i])).parents('div.que.stack').first();
+                if ($outerdiv && ($outerdiv.hasClass('dfexplicitvaildate') || $outerdiv.hasClass('dfcbmexplicitvaildate'))) {
+                    // With instant validation, we don't need the Check button, so hide it.
+                    let button = $outerdiv.find('.im-controls input.submit').first();
+                    if (button.attr('id') === prefix + '-submit') {
+                        button.hide();
+                    }
+                }
+            }
+        }
+
+        formatOptionsObj(rawOptions) {
+            let options = {};
+
+            for (let key in rawOptions) {
+                if (!rawOptions.hasOwnProperty(key)) continue;
+
+                let value = rawOptions[key];
+                switch (key) {
+                    case "singlevars":
+                        if (value === '1') {
+                            options.onlySingleVariables = true;
+                        } else {
+                            options.onlySingleVariables = false;
+                        }
+                        break;
+                    case "addtimessign":
+                        if (value === '1') {
+                            options.addTimesSign = true;
+                        } else {
+                            options.addTimesSign = false;
+                        }
+                        break;
+
+                    default :
+                        break;
+                }
+            }
+
+            options = Object.assign(DEFAULT_TEX2MAX_OPTIONS, options);
+            return options;
+        }
+
+        buildInputControls(mode) {
+            if (!mode) throw new Error('No mathinputmode is set');
+
+            this.controls = new VisualMath.ControlList('#' + this.questionid + 'controls_wrapper');
+            let controlNames = [];
+
+            switch (mode) {
+                case 'simple':
+                    controlNames = ['sqrt', 'divide', 'pi', 'caret'];
+                    this.controls.enable(controlNames);
+                    break;
+                case 'normal':
+                    controlNames = ['sqrt', 'divide', 'nchoosek', 'pi', 'caret'];
+                    this.controls.enable(controlNames);
+                    break;
+                case 'experimental':
+                    this.controls.enableAll();
+                    break;
+                case 'none':
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        addEventListeners() {
+            let selectionButton = $('#' + this.questionid + 'editor_selection');
+            let parent = this;
+            selectionButton.on('click', function () {
+                parent.toggleEditor();
+            });
+        }
+
+        toggleEditor() {
+            if (this.editorVisible) {
+                this.inputs.forEach(input => {
+                    input.$input.show();
+                    input.wrapper.hide();
+                    this.controls.$wrapper.hide();
+                    this.editorVisible = false;
+                })
+            } else {
+                this.inputs.forEach(input => {
+                    input.$input.hide();
+                    input.wrapper.show();
+                    this.controls.$wrapper.show();
+                    this.editorVisible = true;
+                })
+            }
+        }
+
+
+    }
+
+
+    return {
+        initialize: (questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions) => {
+            if (!stackInputIDs.length > 0) return;
+            let editor = new wysiwyg(questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions);
         }
     };
 
