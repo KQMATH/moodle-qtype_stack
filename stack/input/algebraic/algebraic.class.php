@@ -59,7 +59,28 @@ class stack_algebraic_input extends stack_input {
             $attributes['readonly'] = 'readonly';
         }
 
-        return html_writer::empty_tag('input', $attributes);
+
+        // Create new hidden input fields for storing the raw LaTeX input.
+        $latexinputname = $fieldname . '_latex';
+
+        // Set initial question value to "" if the question_attempt has no responses.
+        if (isset($state->contents[$latexinputname])) {
+            $value = $state->contents[$latexinputname];
+            throw new Error("okokokkok");
+        } else {
+            $value = "";
+        }
+
+        $latexAttributes = array(
+            'type' => 'hidden',
+            'name' => $latexinputname,
+            'value' => $value,
+            'id' => $latexinputname,
+        );
+
+        $result = html_writer::empty_tag('input', $attributes);
+        $result .= html_writer::empty_tag('input', $latexAttributes);
+        return $result;
     }
 
     /**
