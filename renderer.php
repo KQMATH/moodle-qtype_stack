@@ -47,9 +47,7 @@ class qtype_stack_renderer extends qtype_renderer {
 
         $prefix = $qa->get_field_prefix();
 
-        $inputids = [];
-        $latexinputids = [];
-        $latexresponses = [];
+
 
 
         // Replace inputs.
@@ -115,41 +113,44 @@ class qtype_stack_renderer extends qtype_renderer {
         }
 
 
+
+        $visualmatheditor = false;
+        $inputids = [];
+        $latexinputids = [];
+        $latexresponses = [];
+
         foreach ($question->inputs as $name => $input) {
-            // Collect all the STACK input field ids.
-            $inputids[] = $prefix . $name;
+            if ($input->get_supported_editors()['visualmath']) {
+                $visualmatheditor = true;
 
-            // Create new hidden input fields for string the raw LaTeX input.
-            $latexinputname = $prefix . $name . '_latex';
-            $latexinputids[] = $latexinputname;
+                // Collect all input field ids. for the supported editor.
+                $inputids[] = $prefix . $name;
 
-            // Set initial question value to "" if the question_attempt has no responses.
-            if (isset($response[$name . '_latex'])) {
-                $value = $response[$name . '_latex'];
-            } else {
-                $value = "";
+                // Create new hidden input fields for string the raw LaTeX input.
+                $latexinputname = $prefix . $name . '_latex';
+                $latexinputids[] = $latexinputname;
+
+                // Set initial question value to "" if the question_attempt has no responses.
+                if (isset($response[$name . '_latex'])) {
+                    $value = $response[$name . '_latex'];
+                } else {
+                    $value = "";
+                }
+
+                $latexresponses[] = $value;
+            }
+        }
+
+        if ($visualmatheditor) {
+            // Initialise visualmathinput functionality
+            if ($CFG->debugdeveloper) {
+                $result .= debug_renderer::render_debug_view($inputids, "", $latexinputids, $latexresponses);
             }
 
-            $latexresponses[] = $value;
-
-            $attributes = array(
-                'type' => 'hidden',
-                'name' => $latexinputname,
-                'value' => $value,
-                'id' => $latexinputname,
-            );
-            $result .= html_writer::empty_tag('input', $attributes);
+            $configParams = $this->getAMDConfigParams($question);
+            $amdParams = array($debug, $prefix, $inputids, $latexinputids, $latexresponses, $configParams);
+            $this->page->requires->js_call_amd('qtype_stack/input', 'initialize', $amdParams);
         }
-
-        // Initialise visualmathinput functionality
-        if ($CFG->debugdeveloper) {
-            $result .= debug_renderer::render_debug_view($inputids, "", $latexinputids, $latexresponses);
-        }
-
-        $configParams = $this->getAMDConfigParams($question);
-        $amdParams = array($debug, $prefix, $inputids, $latexinputids, $latexresponses, $configParams);
-        $this->page->requires->js_call_amd('qtype_stack/input', 'initialize', $amdParams);
-
         return $result;
     }
 
@@ -171,17 +172,14 @@ class qtype_stack_renderer extends qtype_renderer {
      */
     private function getAMDConfigParams($question) {
         $result = [];
-        //if (!isset($question->singlevars)) throw new stack_exception('renderer: singlevars is not set');
-        //if (!isset($question->addtimessign)) throw new stack_exception('renderer: addtimessign is not set');
-        //if (!isset($question->mathinputmode)) throw new stack_exception('renderer: mathinputmode is not set');
+        if (!isset($question->editoroptions->singlevars)) throw new stack_exception('renderer: singlevars is not set');
+        if (!isset($question->editoroptions->addtimessign)) throw new stack_exception('renderer: addtimessign is not set');
+        if (!isset($question->editoroptions->mathinputmode)) throw new stack_exception('renderer: mathinputmode is not set');
 
-        //$result['singlevars'] = $question->singlevars;
-        //$result['addtimessign'] = $question->addtimessign;
-        //esult['mathinputmode'] = $question->mathinputmode;
+        $result['singlevars'] = $question->editoroptions->singlevars;
+        $result['addtimessign'] = $question->editoroptions->addtimessign;
+        $result['mathinputmode'] = $question->editoroptions->mathinputmode;
 
-        $result['singlevars'] = "1";
-        $result['addtimessign'] = "1";
-        $result['mathinputmode'] = "experimental";
         return $result;
     }
 
