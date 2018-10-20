@@ -43,12 +43,9 @@ class qtype_stack_renderer extends qtype_renderer {
         $response = $qa->get_last_qt_data();
 
         $questiontext = $question->questiontextinstantiated;
-
+        $questionid = $question->id;
 
         $prefix = $qa->get_field_prefix();
-
-
-
 
         // Replace inputs.
         $inputstovaldiate = array();
@@ -101,18 +98,6 @@ class qtype_stack_renderer extends qtype_renderer {
                     'M.qtype_stack.init_inputs', array($inputstovaldiate, $qaid, $qa->get_field_prefix()));
         }
 
-        $result = '';
-        $result .= html_writer::div('', '', ['id' => 'controls_wrapper']);
-
-        $result .= $this->question_tests_link($question, $options) . $questiontext;
-
-        if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error($response),
-                    array('class' => 'validationerror'));
-        }
-
-
 
         $visualmatheditor = false;
         $inputids = [];
@@ -141,6 +126,21 @@ class qtype_stack_renderer extends qtype_renderer {
             }
         }
 
+
+        $result = '';
+        if ($visualmatheditor) {
+            $result .= html_writer::div('', '', ['id' => $questionid . 'controls_wrapper']);
+            $result .= html_writer::div('change editor ', 'btn btn-primary editor_selection', ['id' => $questionid . 'editor_selection']);
+        }
+
+        $result .= $this->question_tests_link($question, $options) . $questiontext;
+
+        if ($qa->get_state() == question_state::$invalid) {
+            $result .= html_writer::nonempty_tag('div',
+                $question->get_validation_error($response),
+                array('class' => 'validationerror'));
+        }
+
         if ($visualmatheditor) {
             // Initialise visualmathinput functionality
             if ($CFG->debugdeveloper) {
@@ -148,7 +148,7 @@ class qtype_stack_renderer extends qtype_renderer {
             }
 
             $configParams = $this->getAMDConfigParams($question);
-            $amdParams = array($debug, $prefix, $inputids, $latexinputids, $latexresponses, $configParams);
+            $amdParams = array($questionid, $debug, $prefix, $inputids, $latexinputids, $latexresponses, $configParams);
             $this->page->requires->js_call_amd('qtype_stack/input', 'initialize', $amdParams);
         }
         return $result;

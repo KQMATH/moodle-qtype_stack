@@ -94,6 +94,11 @@
     min-height: 1em;
 }
 
+.que.stack .editor_selection {
+    float: right;
+    margin: -12px -20px 20px -20px;
+}
+
 
 /* Visual math input */
 .que.stack .visual-math-input-wrapper {
