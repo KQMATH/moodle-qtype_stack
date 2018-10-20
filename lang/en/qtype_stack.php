@@ -335,6 +335,18 @@ $string['variantsselectionseed'] = 'Random group';
 $string['variantsselectionseed_help'] = 'Normally you can leave this box blank. If, however, you want two different questions in a quiz to use the same random seed, then type the same string in this box for the two questions (and deploy the same set of random seeds, if you are using deployed versions) and the random seeds for the two questions will be synchronised.';
 $string['verifyquestionandupdate'] = 'Verify the question text and update the form';
 $string['youmustconfirm'] = 'You must confirm here.';
+$string['editoroptions'] = 'Editor options';
+$string['singlevars'] = 'Single vars';
+$string['singlevars_help'] = 'Whether or not restrict inputs to only allow single lettered variables.';
+$string['addtimessign'] = 'Add times sign';
+$string['addtimessign_help'] = 'Whether or not to add times sign. This goes on top of STACk\'s functionality to insert stars.';
+$string['mathinputmode'] = 'Math input mode';
+$string['mathinputmode_help'] = 'Controls which set of mathematical input buttons are to be displayed.';
+
+$string['modesimple'] = 'Simple';
+$string['modenormal'] = 'Normal';
+$string['modeexperimental'] = 'Experimental';
+$string['modenone'] = 'None';
 
 // Strings used by input elements.
 $string['booleangotunrecognisedvalue'] = 'Invalid input.';
@@ -402,6 +414,14 @@ $string['settingmaximalibraries'] = 'Load optional Maxima libraries:';
 $string['settingmaximalibraries_desc'] = 'This is a comma separated list of Maxima library names which will be automatically loaded into Maxima.  Only supported library names can be used: see the documentation for supported library names. These libraries will not be loaded if you have saved a maxima image to optimise performance.';
 $string['settingmaximalibraries_error'] = 'The following package is not supported: {$a}';
 $string['settingmaximalibraries_failed'] = 'It appears as if some of the Maxima packages you have asked for have failed to load.  Please refer to the installation instructions for notes about this error.';
+$string['input_options_heading'] = 'Default visual math editor input options';
+$string['input_options_heading_desc'] = 'Used when creating a new question, or adding a new input to an existing question.';
+$string['only_single_letter_variables'] = 'Only single lettered variables';
+$string['only_single_letter_variables_desc'] = 'Restrict inputs to only allow single lettered variables.';
+$string['add_times_sign'] = 'Add times sign';
+$string['add_times_sign_desc'] = 'Controls whether or not to add times sign in LaTeX to Maxima conversion . Note: this goes on top of STACK\'s functionality to insert stars.';
+$string['math_input_mode'] = 'Math input mode';
+$string['math_input_mode_desc'] = 'Controls which set of mathematical input buttons are to be displayed.';
 
 // Strings used by replace dollars script.
 $string['replacedollarscount'] = 'This category contains {$a} STACK questions.';
