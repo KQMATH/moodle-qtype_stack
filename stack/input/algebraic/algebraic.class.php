@@ -77,6 +77,17 @@ class stack_algebraic_input extends stack_input {
         return $expected;
     }
 
+    /**
+     * Return an array with the supported editors
+     * @return array the supported editors
+     */
+    public function get_supported_editors() {
+        return array(
+            'default'       => true,
+            'visualmath'    => true
+        );
+    }
+
     public function add_to_moodleform_testinput(MoodleQuickForm $mform) {
         $mform->addElement('text', $this->name, $this->name, array('size' => $this->parameters['boxWidth']));
         $mform->setDefault($this->name, $this->parameters['syntaxHint']);
