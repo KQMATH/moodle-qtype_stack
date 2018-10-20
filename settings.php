@@ -235,3 +235,28 @@ $settings->add(new admin_setting_configselect('qtype_stack/matrixparens',
         get_string('matrixparens', 'qtype_stack'),
         get_string('matrixparens_help', 'qtype_stack'), '[',
         stack_options::get_matrix_parens_options()));
+
+
+
+// Options for visual math input editor.
+$settings->add(new admin_setting_heading('visualeditorinputoptionsheading',
+        get_string('input_options_heading', 'qtype_stack'),
+        get_string('input_options_heading_desc', 'qtype_stack')));
+
+
+$settings->add(new admin_setting_configselect('qtype_stack/singlevars',
+        get_string('only_single_letter_variables', 'qtype_stack'),
+        get_string('only_single_letter_variables_desc', 'qtype_stack'), '1',
+        stack_options::get_yes_no_options()));
+
+
+$settings->add(new admin_setting_configselect('qtype_stack/addtimessign',
+        get_string('add_times_sign', 'qtype_stack'),
+        get_string('add_times_sign_desc', 'qtype_stack'), '1',
+        stack_options::get_yes_no_options()));
+
+
+$settings->add(new admin_setting_configselect('qtype_stack/mathinputmode',
+        get_string('math_input_mode', 'qtype_stack'),
+        get_string('math_input_mode_desc', 'qtype_stack'), 'normal',
+        stack_options::get_math_input_mode_options()));
