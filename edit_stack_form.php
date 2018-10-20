@@ -312,6 +312,26 @@ class qtype_stack_edit_form extends question_edit_form {
         // Hints.
         $this->add_interactive_settings();
 
+
+
+        // Editor options
+        $mform->addElement('header', 'optionsheader', stack_string('editoroptions'));
+
+        $mform->addElement('selectyesno', 'singlevars', stack_string('singlevars'));
+        $mform->setDefault('singlevars', $this->stackconfig->singlevars);
+        $mform->addHelpButton('singlevars', 'singlevars', 'qtype_stack');
+
+        $mform->addElement('selectyesno', 'addtimessign', stack_string('addtimessign'));
+        $mform->setDefault('addtimessign', $this->stackconfig->addtimessign);
+        $mform->addHelpButton('addtimessign', 'addtimessign', 'qtype_stack');
+
+        $mform->addElement('select', 'mathinputmode', stack_string('mathinputmode'), stack_options::get_math_input_mode_options());
+        $mform->setDefault('mathinputmode', $this->stackconfig->mathinputmode);
+        $mform->addHelpButton('mathinputmode', 'mathinputmode', 'qtype_stack');
+
+
+
+
         // Replace standard penalty input at the bottom with the one we want.
         $mform->removeElement('multitriesheader');
         $mform->removeElement('penalty');
@@ -556,6 +576,7 @@ class qtype_stack_edit_form extends question_edit_form {
     public function data_preprocessing($question) {
         $question = parent::data_preprocessing($question);
         $question = $this->data_preprocessing_options($question);
+        $question = $this->data_preprocessing_editor_options($question);
         $question = $this->data_preprocessing_inputs($question);
         $question = $this->data_preprocessing_prts($question);
         $question = $this->data_preprocessing_hints($question);
@@ -600,6 +621,24 @@ class qtype_stack_edit_form extends question_edit_form {
         $question->assumepositive        = $opt->assumepositive;
         $question->assumereal            = $opt->assumereal;
 
+        return $question;
+    }
+
+    /**
+     * Do the bit of {@link data_preprocessing()} for the data in the qtype_stack_editors table.
+     * @param object $question the raw data.
+     * @return object the updated $question updated object closer to being ready to send to the form.
+     */
+    protected function data_preprocessing_editor_options($question) {
+        if (!isset($question->editoroptions)) {
+            return $question;
+        }
+
+        $editoroptions = $question->editoroptions;
+
+        $question->singlevars           = $editoroptions->singlevars;
+        $question->addtimessign         = $editoroptions->addtimessign;
+        $question->mathinputmode        = $editoroptions->mathinputmode;
         return $question;
     }
 

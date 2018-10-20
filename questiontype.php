@@ -147,6 +147,22 @@ class qtype_stack extends question_type {
         $options->variantsselectionseed     = $fromform->variantsselectionseed;
         $DB->update_record('qtype_stack_options', $options);
 
+
+        $editoroptions = $DB->get_record('qtype_stack_editor_options', array('questionid' => $fromform->id));
+        if (!$editoroptions) {
+            $editoroptions = new stdClass();
+            $editoroptions->questionid = $fromform->id;
+            $editoroptions->singlevars = '';
+            $editoroptions->addtimessign = '';
+            $editoroptions->mathinputmode = '';
+            $editoroptions->id = $DB->insert_record('qtype_stack_editor_options', $editoroptions);
+        }
+        $editoroptions->singlevars         = $fromform->singlevars;
+        $editoroptions->addtimessign       = $fromform->addtimessign;
+        $editoroptions->mathinputmode      = $fromform->mathinputmode;
+        $editoroptions->id = $DB->update_record('qtype_stack_editor_options', $editoroptions);
+
+
         $inputnames = array_keys($this->get_input_names_from_question_text_lang($fromform->questiontext));
         $inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $fromform->id), '', 'name, id, questionid');
@@ -370,6 +386,10 @@ class qtype_stack extends question_type {
         $question->options = $DB->get_record('qtype_stack_options',
                 array('questionid' => $question->id), '*', MUST_EXIST);
 
+        $question->editoroptions = $DB->get_record('qtype_stack_editor_options',
+                array('questionid' => $question->id),
+            'singlevars, addtimessign, mathinputmode');
+
         $question->inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $question->id), 'name',
                 'name, id, questionid, type, tans, boxsize, strictsyntax, insertstars, ' .
@@ -422,6 +442,13 @@ class qtype_stack extends question_type {
         $question->options->set_option('simplify',    (bool) $questiondata->options->questionsimplify);
         $question->options->set_option('assumepos',   (bool) $questiondata->options->assumepositive);
         $question->options->set_option('assumereal',  (bool) $questiondata->options->assumereal);
+
+
+        $question->editoroptions = new stdClass();
+        $question->editoroptions->singlevars = $questiondata->editoroptions->singlevars;
+        $question->editoroptions->addtimessign = $questiondata->editoroptions->addtimessign;
+        $question->editoroptions->mathinputmode = $questiondata->editoroptions->mathinputmode;
+
 
         $requiredparams = stack_input_factory::get_parameters_used();
         foreach (array_keys($this->get_input_names_from_question_text($question->questiontext)) as $name) {
@@ -519,6 +546,7 @@ class qtype_stack extends question_type {
         $DB->delete_records('qtype_stack_prts',           array('questionid' => $questionid));
         $DB->delete_records('qtype_stack_inputs',         array('questionid' => $questionid));
         $DB->delete_records('qtype_stack_options',        array('questionid' => $questionid));
+        $DB->delete_records('qtype_stack_editor_options', array('questionid' => $questionid));
         parent::delete_question($questionid, $contextid);
     }
 
@@ -1017,6 +1045,11 @@ class qtype_stack extends question_type {
         $output .= "    <matrixparens>{$options->matrixparens}</matrixparens>\n";
         $output .= "    <variantsselectionseed>{$format->xml_escape($options->variantsselectionseed)}</variantsselectionseed>\n";
 
+        $output .= "    <singlevars>{$questiondata->editoroptions->singlevars}</singlevars>\n";
+        $output .= "    <addtimessign>{$questiondata->editoroptions->addtimessign}</addtimessign>\n";
+        $output .= "    <mathinputmode>{$questiondata->editoroptions->mathinputmode}</mathinputmode>\n";
+
+
         foreach ($questiondata->inputs as $input) {
             $output .= "    <input>\n";
             $output .= "      <name>{$input->name}</name>\n";
@@ -1132,6 +1165,10 @@ class qtype_stack extends question_type {
         $fromform->inversetrig           = $format->getpath($xml, array('#', 'inversetrig', 0, '#'), 'cos-1');
         $fromform->matrixparens          = $format->getpath($xml, array('#', 'matrixparens', 0, '#'), '[');
         $fromform->variantsselectionseed = $format->getpath($xml, array('#', 'variantsselectionseed', 0, '#'), 'i');
+
+        $fromform->singlevars            = $format->getpath($xml, array('#', 'singlevars', 0, '#'), '1');
+        $fromform->addtimessign          = $format->getpath($xml, array('#', 'addtimessign', 0, '#'), '1');
+        $fromform->mathinputmode         = $format->getpath($xml, array('#', 'mathinputmode', 0, '#'), 'normal');
 
         if (isset($xml['#']['input'])) {
             foreach ($xml['#']['input'] as $inputxml) {
