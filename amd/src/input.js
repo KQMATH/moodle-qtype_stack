@@ -1,3 +1,8 @@
+/**
+ * @package    qtype_stack
+ * @author     André Storhaug <andr3.storhaug@gmail.com>
+ * @copyright  2018 Norwegian University of Science and Technology (NTNU)
+ */
 define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], function ($, Tex2Max, VisualMath) {
 
     // Constants
@@ -153,7 +158,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
         addTimesSign: true,
         onlyGreekName: true,
         onlyGreekSymbol: false,
-        debugging: true
+        debugging: false
     };
 
     function formatOptionsObj(rawOptions) {
@@ -193,8 +198,6 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
         let controls = new VisualMath.ControlList('#controls_wrapper');
         let controlNames = [];
-
-        let caret = controls.define('caret', '^', field => field.cmd('^'))
 
         switch (mode) {
             case 'simple':
