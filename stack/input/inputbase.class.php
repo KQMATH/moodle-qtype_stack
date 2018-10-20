@@ -1007,6 +1007,18 @@ abstract class stack_input {
         return $feedback;
     }
 
+    /**
+     * Return an array with the supported editors
+     * @return array the supported editors
+     */
+    public function get_supported_editors() {
+        return array(
+            'default'       => true,
+            'visualmath'    => false
+        );
+    }
+
+
     /* Allows individual input types to change the way the list of variables is tagged.
      * Used by the units input type.
      */
