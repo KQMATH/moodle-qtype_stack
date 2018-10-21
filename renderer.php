@@ -130,7 +130,7 @@ class qtype_stack_renderer extends qtype_renderer {
         $result = '';
         if ($visualmatheditor) {
             $result .= html_writer::div('', '', ['id' => $questionid . 'controls_wrapper']);
-            $result .= html_writer::div('change editor ', 'btn btn-primary editor_selection', ['id' => $questionid . 'editor_selection']);
+            $result .= html_writer::div('Change editor ', 'btn btn-primary editor_selection', ['id' => $questionid . 'editor_selection']);
         }
 
         $result .= $this->question_tests_link($question, $options) . $questiontext;
