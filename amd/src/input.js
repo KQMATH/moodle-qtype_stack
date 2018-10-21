@@ -25,7 +25,6 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
             this.waitingTimer;
 
             this.editorVisible = true;
-            console.log(this.editorVisible)
             this.inputs = [];
             this.controls;
             this.converters = new Map();
@@ -41,8 +40,13 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
             this.initialize();
         }
 
+
         initialize() {
             this.addEventListeners();
+
+            this.editorVisible = getEditorSelection(this.questionid);
+            saveEditorSelection(this.questionid, this.editorVisible);
+
 
             let options = this.formatOptionsObj(this.questionOptions);
             let readOnly = false;
@@ -105,8 +109,15 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
             if (!readOnly) {
                 this.buildInputControls(this.questionOptions['mathinputmode']);
+            } else {
+                let selectionButton = $('#' + this.questionid + 'editor_selection');
+                selectionButton.hide();
             }
 
+            if (!this.editorVisible) {
+                this.editorVisible = true;
+                this.toggleEditor();
+            }
         }
 
         convert(latex, options, stackInputID) {
@@ -329,11 +340,66 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                     input.wrapper.show();
                     this.controls.$wrapper.show();
                     this.editorVisible = true;
-                })
+                });
             }
+
+            saveEditorSelection(this.questionid, this.editorVisible);
         }
 
+    }
 
+    /**
+     * Returns true or false whether the wysiwyg editor were visible.
+     * @returns {null|boolean} true if the wysiwyg editor were visible
+     */
+    function getEditorSelection(questionid) {
+        let result = null;
+        if (!sessionStorage.getItem('editor_selection')) {
+            result = null;
+        } else {
+            let rawData = sessionStorage.getItem('editor_selection');
+            let editorSelectionData = JSON.parse(rawData);
+
+            for (let key in editorSelectionData) {
+                if (editorSelectionData.hasOwnProperty(key)) {
+                    if (key === questionid) {
+                        result = editorSelectionData[key]
+                    }
+                }
+            }
+            if (result === null) result = false;
+        }
+        return result;
+    }
+
+    /**
+     * Saves the viewing state of the wysiwyg editor in the sessionStorage.
+     */
+    function saveEditorSelection(questionid, editorSelection) {
+        let editorSelectionData;
+
+        if (!sessionStorage.getItem('editor_selection')) {
+            editorSelectionData = {};
+            editorSelectionData[questionid] = editorSelection;
+
+        } else {
+            let rawData = sessionStorage.getItem('editor_selection');
+            editorSelectionData = JSON.parse(rawData);
+
+            let found = false;
+            for (let key in editorSelectionData) {
+                if (editorSelectionData.hasOwnProperty(key)) {
+                    if (key == questionid) {
+                        found = true;
+                        editorSelectionData[key] = editorSelection;
+                    }
+                }
+            }
+            if (!found) {
+                editorSelectionData[questionid] = editorSelection;
+            }
+        }
+        sessionStorage.setItem('editor_selection', JSON.stringify(editorSelectionData));
     }
 
 
@@ -341,6 +407,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
         initialize: (questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions) => {
             if (!stackInputIDs.length > 0) return;
             let editor = new wysiwyg(questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions);
+
         }
     };
 
