@@ -310,10 +310,10 @@ class stack_options {
      */
     public static function get_math_input_mode_options() {
         return array(
-            'simple' => get_string('modesimple', 'qtype_sigma'),
-            'normal' => get_string('modenormal', 'qtype_sigma'),
-            'experimental' => get_string('modeexperimental', 'qtype_sigma'),
-            'none' => get_string('modenone', 'qtype_sigma'),
+            'simple' => get_string('modesimple', 'qtype_stack'),
+            'normal' => get_string('modenormal', 'qtype_stack'),
+            'experimental' => get_string('modeexperimental', 'qtype_stack'),
+            'none' => get_string('modenone', 'qtype_stack'),
         );
 
     }
