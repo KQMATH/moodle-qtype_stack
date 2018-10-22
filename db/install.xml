@@ -39,7 +39,7 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key link to question.id"/>
         <FIELD NAME="singlevars" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether or not to restrict inputs to only allow single lettered variables."/>
-        <FIELD NAME="addtimessign" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="i" SEQUENCE="false" COMMENT="Whether to add times sign where multiplication is implied."/>
+        <FIELD NAME="addtimessign" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Whether to add times sign where multiplication is implied."/>
         <FIELD NAME="mathinputmode" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="normal" SEQUENCE="false" COMMENT="The type of math input control button layout to be displayed."/>
       </FIELDS>
       <KEYS>
