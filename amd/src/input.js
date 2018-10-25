@@ -332,13 +332,19 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
         }
 
         toggleEditor() {
+            let stackInputDebug = document.getElementById(this.stackInputIDs[0] + '_debug');
+            let $stackInputDebug = $(stackInputDebug);
+            let debugWrapper = $stackInputDebug.closest(".stack-debug-wrapper");
+
             if (this.editorVisible) {
                 this.inputs.forEach(input => {
                     input.$input.show();
                     input.wrapper.hide();
                     this.controls.$wrapper.hide();
                     this.editorVisible = false;
-                })
+                });
+                debugWrapper.hide();
+
             } else {
                 this.inputs.forEach(input => {
                     input.$input.hide();
@@ -346,6 +352,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                     this.controls.$wrapper.show();
                     this.editorVisible = true;
                 });
+                debugWrapper.show();
             }
 
             saveEditorSelection(this.questionid, this.editorVisible);

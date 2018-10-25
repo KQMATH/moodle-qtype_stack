@@ -66,7 +66,6 @@ class stack_algebraic_input extends stack_input {
         // Set initial question value to "" if the question_attempt has no responses.
         if (isset($state->contents[$latexinputname])) {
             $value = $state->contents[$latexinputname];
-            throw new Error("okokokkok");
         } else {
             $value = "";
         }
