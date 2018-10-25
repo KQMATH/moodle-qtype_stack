@@ -44,7 +44,12 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
         initialize() {
             this.addEventListeners();
 
-            this.editorVisible = getEditorSelection(this.questionid);
+            let savedState = getEditorSelection(this.questionid);
+            if (savedState === null) {
+                this.editorVisible = true;
+            } else {
+                this.editorVisible = savedState;
+            }
             saveEditorSelection(this.questionid, this.editorVisible);
 
 
