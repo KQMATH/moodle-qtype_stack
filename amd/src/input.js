@@ -26,7 +26,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
             this.editorVisible = true;
             this.inputs = [];
-            this.controls;
+            this.controls = null;
             this.converters = new Map();
 
             this.questionid = questionid;
@@ -340,7 +340,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 this.inputs.forEach(input => {
                     input.$input.show();
                     input.wrapper.hide();
-                    this.controls.$wrapper.hide();
+                    if (this.controls !== null) this.controls.$wrapper.hide();
                     this.editorVisible = false;
                 });
                 debugWrapper.hide();
@@ -349,7 +349,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 this.inputs.forEach(input => {
                     input.$input.hide();
                     input.wrapper.show();
-                    this.controls.$wrapper.show();
+                    if (this.controls !== null) this.controls.$wrapper.show();
                     this.editorVisible = true;
                 });
                 debugWrapper.show();
