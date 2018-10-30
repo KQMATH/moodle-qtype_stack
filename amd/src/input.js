@@ -119,9 +119,11 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 selectionButton.hide();
             }
 
+
+            // If input should be disabled, controls should be hidden.
             if (!this.editorVisible) {
                 this.editorVisible = true;
-                this.toggleEditor();
+                this.toggleEditor(false);
             }
         }
 
@@ -327,11 +329,11 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
             let selectionButton = $('#' + this.questionid + 'editor_selection');
             let parent = this;
             selectionButton.on('click', function () {
-                parent.toggleEditor();
+                parent.toggleEditor(true);
             });
         }
 
-        toggleEditor() {
+        toggleEditor(save) {
             let stackInputDebug = document.getElementById(this.stackInputIDs[0] + '_debug');
             let $stackInputDebug = $(stackInputDebug);
             let debugWrapper = $stackInputDebug.closest(".stack-debug-wrapper");
@@ -355,7 +357,9 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 debugWrapper.show();
             }
 
-            saveEditorSelection(this.questionid, this.editorVisible);
+            if (save) {
+                saveEditorSelection(this.questionid, this.editorVisible);
+            }
         }
 
     }
