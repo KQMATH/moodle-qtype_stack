@@ -312,8 +312,19 @@ class stack_options {
         return array(
             'simple' => get_string('modesimple', 'qtype_stack'),
             'normal' => get_string('modenormal', 'qtype_stack'),
-            'experimental' => get_string('modeexperimental', 'qtype_stack'),
+            'advanced' => get_string('modeadvanced', 'qtype_stack'),
             'none' => get_string('modenone', 'qtype_stack'),
+        );
+
+    }
+
+    /**
+     * @return array for enabled or disabled.
+     */
+    public static function get_enabled_disabled_options() {
+        return array(
+            '0' => get_string('disabled', 'qtype_stack'),
+            '1' => get_string('enabled', 'qtype_stack'),
         );
 
     }
