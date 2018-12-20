@@ -20,21 +20,26 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
 
     class wysiwyg {
-        constructor(questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions) {
+        constructor(questionid, debug, prefix, inputs, editorOptions) {
             this.errorTimer;
             this.waitingTimer;
 
             this.editorVisible = true;
-            this.inputs = [];
+            this.visualmathinput = [];
             this.controls = null;
             this.converters = new Map();
 
             this.questionid = questionid;
             this.prefix = prefix;
-            this.stackInputIDs = stackInputIDs;
-            this.latexInputIDs = latexInputIDs;
-            this.latexResponses = latexResponses;
-            this.questionOptions = questionOptions;
+            this.inputs = inputs;
+            this.editorOptions = editorOptions;
+
+
+            // this.stackInputIDs = stackInputIDs;
+            // this.latexInputIDs = latexInputIDs;
+            // this.latexResponses = latexResponses;
+            // this.questionOptions = questionOptions;
+
             this.debug = debug;
 
             this.initialize();
@@ -53,18 +58,22 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
             saveEditorSelection(this.questionid, this.editorVisible);
 
 
-            let options = this.formatOptionsObj(this.questionOptions);
             let readOnly = false;
 
-            this.showOrHideCheckButton(this.stackInputIDs, this.prefix);
+            this.showOrHideCheckButton(this.prefix);
 
-            for (let i = 0; i < this.stackInputIDs.length; i++) {
+            for (let i = 0; i < this.inputs.length; i++) {
                 let $stackInputDebug, $latexInputDebug;
 
-                let latexInput = document.getElementById(this.latexInputIDs[i]);
+                let stackInputID = this.inputs[i].inputid;
+                let latexInputID = this.inputs[i].latexinputid;
+                let latexResponse = this.inputs[i].latexresponse;
+                let inputOptions = this.formatOptionsObj(this.inputs[i].inputoptions);
+
+                let latexInput = document.getElementById(latexInputID);
                 let $latexInput = $(latexInput);
 
-                let stackInput = document.getElementById(this.stackInputIDs[i]);
+                let stackInput = document.getElementById(stackInputID);
                 let $stackInput = $(stackInput);
 
                 let wrapper = document.createElement('div');
@@ -72,48 +81,56 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 let $parent = $stackInput.parent();
 
                 if (this.debug) {
-                    let stackInputDebug = document.getElementById(this.stackInputIDs[i] + '_debug');
+                    let stackInputDebug = document.getElementById(stackInputID + '_debug');
                     $stackInputDebug = $(stackInputDebug);
 
-                    let latexInputDebug = document.getElementById(this.latexInputIDs[i] + '_debug');
+                    let latexInputDebug = document.getElementById(latexInputID + '_debug');
                     $latexInputDebug = $(latexInputDebug);
                 }
 
-                let input = new VisualMath.Input('#' + $.escapeSelector(this.stackInputIDs[i]), $parent);
-                this.inputs.push(input); // Register the new input
-                input.$input.hide();
 
-                if (!input.$input.prop('readonly')) {
-                    input.onEdit = ($input, field) => {
-                        $input.val(this.convert(field.latex(), options, this.stackInputIDs[i]));
+                try {
+                    let converter = new Tex2Max.TeX2Max(inputOptions);
+                    this.converters.set(stackInputID, converter);
+                } catch (error) {
+                    this.renderErrorFeedback(error.message, stackInputID);
+                    return;
+                }
+
+                let visualmathinput = new VisualMath.Input('#' + $.escapeSelector(stackInputID), $parent);
+                this.visualmathinput.push(visualmathinput); // Register the new input
+                visualmathinput.$input.hide();
+                if (!visualmathinput.$input.prop('readonly')) {
+                    visualmathinput.onEdit = ($input, field) => {
+                        $input.val(this.convert(field.latex(), stackInputID));
                         $latexInput.val(field.latex());
                         $input.get(0).dispatchEvent(new Event('change')); // Event firing needs to be on a vanilla dom object.
 
                         if (this.debug) {
-                            $stackInputDebug.html(this.convert(field.latex(), options, this.stackInputIDs[i]));
+                            $stackInputDebug.html(this.convert(field.latex(), stackInputID));
                             $latexInputDebug.html(field.latex());
                         }
                     };
 
                 } else {
                     readOnly = true;
-                    input.disable();
+                    visualmathinput.disable();
                 }
 
                 // Set the previous step attempt data or autosaved (mod_quiz) value to the MathQuill field.
                 if ($latexInput.val()) {
-                    input.field.write($latexInput.val());
-                    this.convert($latexInput.val(), options, this.stackInputIDs[i])
+                    visualmathinput.field.write($latexInput.val());
+                    this.convert($latexInput.val(), stackInputID)
 
-                } else if (this.latexResponses[i] !== null && this.latexResponses[i] !== "") {
-                    input.field.write(this.latexResponses[i]);
-                    this.convert(this.latexResponses[i], options, this.stackInputIDs[i])
+                } else if (latexResponse !== null && latexResponse !== "") {
+                    visualmathinput.field.write(latexResponse);
+                    this.convert(latexResponse, stackInputID)
                 }
             }
 
 
             if (!readOnly) {
-                this.buildInputControls(this.questionOptions['mathinputmode']);
+                this.buildInputControls(this.editorOptions['mathinputmode']);
             } else {
                 let selectionButton = $('#' + this.questionid + 'editor_selection');
                 selectionButton.hide();
@@ -127,19 +144,9 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
             }
         }
 
-        convert(latex, options, stackInputID) {
+        convert(latex, stackInputID) {
             let result = '';
-
             let converter = this.converters.get(stackInputID);
-            if (typeof converter === "undefined") {
-                try {
-                    converter = new Tex2Max.TeX2Max(options);
-                    this.converters.set(stackInputID, converter);
-                } catch (error) {
-                    this.renderErrorFeedback(error.message, stackInputID);
-                    return;
-                }
-            }
 
             clearTimeout(this.errorTimer);
 
@@ -255,13 +262,13 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
             }
         }
 
-        showOrHideCheckButton(inputIDs, prefix) {
-            for (let i = 0; i < inputIDs.length; i++) {
-                let $outerdiv = $(document.getElementById(inputIDs[i])).parents('div.que.stack').first();
+        showOrHideCheckButton() {
+            for (let i = 0; i < this.inputs.length; i++) {
+                let $outerdiv = $(document.getElementById(this.inputs[i].inputid)).parents('div.que.stack').first();
                 if ($outerdiv && ($outerdiv.hasClass('dfexplicitvaildate') || $outerdiv.hasClass('dfcbmexplicitvaildate'))) {
                     // With instant validation, we don't need the Check button, so hide it.
                     let button = $outerdiv.find('.im-controls input.submit').first();
-                    if (button.attr('id') === prefix + '-submit') {
+                    if (button.attr('id') === this.prefix + '-submit') {
                         button.hide();
                     }
                 }
@@ -276,21 +283,20 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
                 let value = rawOptions[key];
                 switch (key) {
-                    case "singlevars":
-                        if (value === '1') {
+                    case "insertStars":
+
+                        if (value === 2 || value === 5) {
                             options.onlySingleVariables = true;
                         } else {
                             options.onlySingleVariables = false;
                         }
-                        break;
-                    case "addtimessign":
-                        if (value === '1') {
+
+                        if (value === 1 || value === 2 || value === 4 || value === 5) {
                             options.addTimesSign = true;
                         } else {
                             options.addTimesSign = false;
                         }
                         break;
-
                     default :
                         break;
                 }
@@ -315,7 +321,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                     controlNames = ['sqrt', 'divide', 'nchoosek', 'pi', 'caret'];
                     this.controls.enable(controlNames);
                     break;
-                case 'experimental':
+                case 'advanced':
                     this.controls.enableAll();
                     break;
                 case 'none':
@@ -334,12 +340,12 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
         }
 
         toggleEditor(save) {
-            let stackInputDebug = document.getElementById(this.stackInputIDs[0] + '_debug');
+            let stackInputDebug = document.getElementById(this.inputs[0].inputid + '_debug');
             let $stackInputDebug = $(stackInputDebug);
             let debugWrapper = $stackInputDebug.closest(".stack-debug-wrapper");
 
             if (this.editorVisible) {
-                this.inputs.forEach(input => {
+                this.visualmathinput.forEach(input => {
                     input.$input.show();
                     input.wrapper.hide();
                     if (this.controls !== null) this.controls.$wrapper.hide();
@@ -348,7 +354,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
                 debugWrapper.hide();
 
             } else {
-                this.inputs.forEach(input => {
+                this.visualmathinput.forEach(input => {
                     input.$input.hide();
                     input.wrapper.show();
                     if (this.controls !== null) this.controls.$wrapper.show();
@@ -420,9 +426,9 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
 
     return {
-        initialize: (questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions) => {
-            if (!stackInputIDs.length > 0) return;
-            let editor = new wysiwyg(questionid, debug, prefix, stackInputIDs, latexInputIDs, latexResponses, questionOptions);
+        initialize: (questionid, debug, prefix, inputs, editorOptions) => {
+            if (!inputs.length > 0) return;
+            let editor = new wysiwyg(questionid, debug, prefix, inputs, editorOptions);
 
         }
     };
