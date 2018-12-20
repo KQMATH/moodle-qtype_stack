@@ -152,13 +152,11 @@ class qtype_stack extends question_type {
         if (!$editoroptions) {
             $editoroptions = new stdClass();
             $editoroptions->questionid = $fromform->id;
-            $editoroptions->singlevars = '';
-            $editoroptions->addtimessign = '';
+            $editoroptions->editorvisualmath = '';
             $editoroptions->mathinputmode = '';
             $editoroptions->id = $DB->insert_record('qtype_stack_editor_options', $editoroptions);
         }
-        $editoroptions->singlevars         = $fromform->singlevars;
-        $editoroptions->addtimessign       = $fromform->addtimessign;
+        $editoroptions->editorvisualmath   = $fromform->editorvisualmath;
         $editoroptions->mathinputmode      = $fromform->mathinputmode;
         $editoroptions->id = $DB->update_record('qtype_stack_editor_options', $editoroptions);
 
@@ -388,7 +386,7 @@ class qtype_stack extends question_type {
 
         $question->editoroptions = $DB->get_record('qtype_stack_editor_options',
                 array('questionid' => $question->id),
-            'singlevars, addtimessign, mathinputmode');
+            'editorvisualmath, mathinputmode');
 
         $question->inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $question->id), 'name',
@@ -445,9 +443,8 @@ class qtype_stack extends question_type {
 
 
         $question->editoroptions = new stdClass();
-        $question->editoroptions->singlevars = $questiondata->editoroptions->singlevars;
-        $question->editoroptions->addtimessign = $questiondata->editoroptions->addtimessign;
-        $question->editoroptions->mathinputmode = $questiondata->editoroptions->mathinputmode;
+        $question->editoroptions->editorvisualmath  = $questiondata->editoroptions->editorvisualmath;
+        $question->editoroptions->mathinputmode     = $questiondata->editoroptions->mathinputmode;
 
 
         $requiredparams = stack_input_factory::get_parameters_used();
@@ -1045,8 +1042,7 @@ class qtype_stack extends question_type {
         $output .= "    <matrixparens>{$options->matrixparens}</matrixparens>\n";
         $output .= "    <variantsselectionseed>{$format->xml_escape($options->variantsselectionseed)}</variantsselectionseed>\n";
 
-        $output .= "    <singlevars>{$questiondata->editoroptions->singlevars}</singlevars>\n";
-        $output .= "    <addtimessign>{$questiondata->editoroptions->addtimessign}</addtimessign>\n";
+        $output .= "    <editorvisualmath>{$questiondata->editoroptions->editorvisualmath}</editorvisualmath>\n";
         $output .= "    <mathinputmode>{$questiondata->editoroptions->mathinputmode}</mathinputmode>\n";
 
 
@@ -1166,8 +1162,7 @@ class qtype_stack extends question_type {
         $fromform->matrixparens          = $format->getpath($xml, array('#', 'matrixparens', 0, '#'), '[');
         $fromform->variantsselectionseed = $format->getpath($xml, array('#', 'variantsselectionseed', 0, '#'), 'i');
 
-        $fromform->singlevars            = $format->getpath($xml, array('#', 'singlevars', 0, '#'), '1');
-        $fromform->addtimessign          = $format->getpath($xml, array('#', 'addtimessign', 0, '#'), '1');
+        $fromform->editorvisualmath      = $format->getpath($xml, array('#', 'editorvisualmath', 0, '#'), '0');
         $fromform->mathinputmode         = $format->getpath($xml, array('#', 'mathinputmode', 0, '#'), 'normal');
 
         if (isset($xml['#']['input'])) {

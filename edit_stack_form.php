@@ -317,16 +317,13 @@ class qtype_stack_edit_form extends question_edit_form {
         // Editor options
         $mform->addElement('header', 'optionsheader', stack_string('editoroptions'));
 
-        $mform->addElement('selectyesno', 'singlevars', stack_string('singlevars'));
-        $mform->setDefault('singlevars', $this->stackconfig->singlevars);
-        $mform->addHelpButton('singlevars', 'singlevars', 'qtype_stack');
-
-        $mform->addElement('selectyesno', 'addtimessign', stack_string('addtimessign'));
-        $mform->setDefault('addtimessign', $this->stackconfig->addtimessign);
-        $mform->addHelpButton('addtimessign', 'addtimessign', 'qtype_stack');
+        $mform->addElement('select', 'editorvisualmath', stack_string('editorvisualmath'), stack_options::get_enabled_disabled_options());
+        $mform->setDefault('editorvisualmath', $this->stackconfig->addtimessign);
+        $mform->addHelpButton('editorvisualmath', 'editorvisualmath', 'qtype_stack');
 
         $mform->addElement('select', 'mathinputmode', stack_string('mathinputmode'), stack_options::get_math_input_mode_options());
         $mform->setDefault('mathinputmode', $this->stackconfig->mathinputmode);
+        $mform->hideif('mathinputmode', 'editorvisualmath', 'eq', 0);
         $mform->addHelpButton('mathinputmode', 'mathinputmode', 'qtype_stack');
 
 
@@ -636,8 +633,7 @@ class qtype_stack_edit_form extends question_edit_form {
 
         $editoroptions = $question->editoroptions;
 
-        $question->singlevars           = $editoroptions->singlevars;
-        $question->addtimessign         = $editoroptions->addtimessign;
+        $question->editorvisualmath     = $editoroptions->editorvisualmath;
         $question->mathinputmode        = $editoroptions->mathinputmode;
         return $question;
     }
