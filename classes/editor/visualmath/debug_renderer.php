@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * STACK question renderer class.
+ * STACK VisualMath debug renderer class.
  *
  * @package    qtype
  * @subpackage stack
@@ -24,13 +24,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace qtype_stack\output;
+namespace qtype_stack\editor;
 
 use stack_exception;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once(__DIR__ . '/../../locallib.php');
+require_once(__DIR__ . '/../../../locallib.php');
 
 class debug_renderer {
     /**
@@ -79,18 +79,21 @@ class debug_renderer {
     }
 
 
-    public static function render_debug_view(array $stackinputs,  $stackinputstring, array $latexinputs, array $latexinputstring) {
-
+    public static function render_debug_view(array $inputs) {
         $result = "";
         $result .= \html_writer::start_div('stack-debug-wrapper');
 
         $result .= self::render_debug_header();
 
+        for ($i = 0; $i < count($inputs); $i++) {
+            $stackinputs = $inputs[$i]['inputid'];
+            $stackinputstring = "";
+            $latexinputs = $inputs[$i]['latexinputid'];
+            $latexinputstring = $inputs[$i]['latexresponse'];
 
-        for ($i = 0; $i < count($stackinputs); $i++) {
             $result .= \html_writer::start_div('stack-debug-question-wrapper');
-            $result .= self::render_debug_stack_span($stackinputs[$i], $stackinputstring);
-            $result .= self::render_debug_latex_span($latexinputs[$i], $latexinputstring[$i]);
+            $result .= self::render_debug_stack_span($stackinputs, $stackinputstring);
+            $result .= self::render_debug_latex_span($latexinputs, $latexinputstring);
             $result .= \html_writer::end_div();
         }
 
