@@ -22,7 +22,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use qtype_stack\output\debug_renderer;
+use qtype_stack\editor\editor_visualmath;
+require_once(__DIR__ . '/classes/editor/visualmath/editor_visualmath.php');
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -99,38 +100,19 @@ class qtype_stack_renderer extends qtype_renderer {
         }
 
 
-        $visualmatheditor = false;
-        $inputids = [];
-        $latexinputids = [];
-        $latexresponses = [];
+        $visualmatheditor = new editor_visualmath($questionid, $prefix, $response, $question->editoroptions);
 
         foreach ($question->inputs as $name => $input) {
-            if ($input->get_supported_editors()['visualmath']) {
-                $visualmatheditor = true;
-
-                // Collect all input field ids. for the supported editor.
-                $inputids[] = $prefix . $name;
-
-                // Create new hidden input fields for string the raw LaTeX input.
-                $latexinputname = $prefix . $name . '_latex';
-                $latexinputids[] = $latexinputname;
-
-                // Set initial question value to "" if the question_attempt has no responses.
-                if (isset($response[$name . '_latex'])) {
-                    $value = $response[$name . '_latex'];
-                } else {
-                    $value = "";
-                }
-
-                $latexresponses[] = $value;
-            }
+            $visualmatheditor->register_input($name, $input, $response);
         }
 
 
         $result = '';
-        if ($visualmatheditor) {
-            $result .= html_writer::div('', '', ['id' => $questionid . 'controls_wrapper']);
-            $result .= html_writer::div('Change editor ', 'btn btn-primary editor_selection', ['id' => $questionid . 'editor_selection']);
+
+        if ($visualmatheditor->is_used() && $visualmatheditor->is_enabled()) {
+            $result .= $visualmatheditor->render();
+            $params = $visualmatheditor->get_js_params_array();
+            $this->page->requires->js_call_amd('qtype_stack/input', 'initialize', $params);
         }
 
         $result .= $this->question_tests_link($question, $options) . $questiontext;
@@ -141,16 +123,8 @@ class qtype_stack_renderer extends qtype_renderer {
                 array('class' => 'validationerror'));
         }
 
-        if ($visualmatheditor) {
-            // Initialise visualmathinput functionality
-            if ($CFG->debugdeveloper) {
-                $result .= debug_renderer::render_debug_view($inputids, "", $latexinputids, $latexresponses);
-            }
+        $result .= $visualmatheditor->render_debug_info();
 
-            $configParams = $this->getAMDConfigParams($question);
-            $amdParams = array($questionid, $debug, $prefix, $inputids, $latexinputids, $latexresponses, $configParams);
-            $this->page->requires->js_call_amd('qtype_stack/input', 'initialize', $amdParams);
-        }
         return $result;
     }
 
@@ -163,26 +137,6 @@ class qtype_stack_renderer extends qtype_renderer {
         $PAGE->requires->css('/question/type/stack/visualmathinput/mathquill.css');
         $PAGE->requires->css('/question/type/stack/visualmathinput/visual-math-input.css');
     }
-
-
-    /**
-     * @param $question
-     * @return mixed
-     * @throws stack_exception
-     */
-    private function getAMDConfigParams($question) {
-        $result = [];
-        if (!isset($question->editoroptions->singlevars)) throw new stack_exception('renderer: singlevars is not set');
-        if (!isset($question->editoroptions->addtimessign)) throw new stack_exception('renderer: addtimessign is not set');
-        if (!isset($question->editoroptions->mathinputmode)) throw new stack_exception('renderer: mathinputmode is not set');
-
-        $result['singlevars'] = $question->editoroptions->singlevars;
-        $result['addtimessign'] = $question->editoroptions->addtimessign;
-        $result['mathinputmode'] = $question->editoroptions->mathinputmode;
-
-        return $result;
-    }
-
 
 
     /**
