@@ -791,7 +791,7 @@ function xmldb_qtype_stack_upgrade($oldversion) {
 
     if ($oldversion < 2018102000) {
 
-        // Define field stackversion to be added to qtype_stack_options.
+        // Define new table qtype_stack_editor_options.
         $table = new xmldb_table('qtype_stack_editor_options');
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
@@ -811,6 +811,32 @@ function xmldb_qtype_stack_upgrade($oldversion) {
 
         // STACK savepoint reached.
         upgrade_plugin_savepoint(true, 2018102000, 'qtype', 'stack');
+    }
+
+    if ($oldversion < 2018122000) {
+
+        // Define field editorvisualmath to be added to qtype_stack_editor_options.
+        $table = new xmldb_table('qtype_stack_editor_options');
+        $field = new xmldb_field('editorvisualmath', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
+        $fieldold1 = new xmldb_field('singlevars');
+        $fieldold2 = new xmldb_field('addtimessign');
+
+        // Conditionally launch add field editorvisualmath.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Conditionally launch drop field singlevars.
+        if ($dbman->field_exists($table, $fieldold1)) {
+            $dbman->drop_field($table, $fieldold1);
+        }
+        // Conditionally launch drop field addtimessign.
+        if ($dbman->field_exists($table, $fieldold2)) {
+            $dbman->drop_field($table, $fieldold2);
+        }
+
+        // STACK savepoint reached.
+        upgrade_plugin_savepoint(true, 2018122000, 'qtype', 'stack');
     }
 
     // Add new upgrade blocks just above here.
