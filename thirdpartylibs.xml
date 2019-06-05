@@ -19,7 +19,7 @@
         <license>GPL</license>
     </library>
     <library>
-        <location>amd/src/tex2max.js</location>
+        <location>amd/src/tex2max.amd.js</location>
         <name>TeX2Max</name>
         <version>1.0.0</version>
         <license>GPL</license>

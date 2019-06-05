@@ -3,7 +3,7 @@
  * @author     André Storhaug <andr3.storhaug@gmail.com>
  * @copyright  2018 Norwegian University of Science and Technology (NTNU)
  */
-define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], function ($, Tex2Max, VisualMath) {
+define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'], function ($, TeX2Max, VisualMath) {
 
     // Constants
     const FEEDBACK_ERROR_DELAY = 1000;
@@ -90,7 +90,7 @@ define(['jquery', 'qtype_stack/tex2max', 'qtype_stack/visual-math-input'], funct
 
 
                 try {
-                    let converter = new Tex2Max.TeX2Max(inputOptions);
+                    let converter = new TeX2Max(inputOptions);
                     this.converters.set(stackInputID, converter);
                 } catch (error) {
                     this.renderErrorFeedback(error.message, stackInputID);
