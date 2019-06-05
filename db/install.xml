@@ -38,7 +38,7 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key link to question.id"/>
-        <FIELD NAME="editorvisualmath" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Enable or disable the VisualMath editor."/>
+        <FIELD NAME="editorwysiwyg" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Enable or disable the WYSIWYG editor."/>
         <FIELD NAME="mathinputmode" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="normal" SEQUENCE="false" COMMENT="The type of math input control button layout to be displayed."/>
       </FIELDS>
       <KEYS>

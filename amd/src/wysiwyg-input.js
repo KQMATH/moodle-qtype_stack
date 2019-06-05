@@ -25,7 +25,7 @@ define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'],
                 this.waitingTimer;
 
                 this.editorVisible = true;
-                this.visualmathinput = [];
+                this.wysiwyginput = [];
                 this.controls = null;
                 this.converters = new Map();
 
@@ -98,14 +98,14 @@ define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'],
                         return;
                     }
 
-                    let visualmathinput = new VisualMath.Input(
+                    let wysiwyginput = new VisualMath.Input(
                         '#' + $.escapeSelector(stackInputID), $parent);
 
-                    this.visualmathinput.push(visualmathinput); // Register the
+                    this.wysiwyginput.push(wysiwyginput); // Register the
                                                                 // new input
-                    visualmathinput.$input.hide();
-                    if (!visualmathinput.$input.prop('readonly')) {
-                        visualmathinput.onEdit = ($input, field) => {
+                    wysiwyginput.$input.hide();
+                    if (!wysiwyginput.$input.prop('readonly')) {
+                        wysiwyginput.onEdit = ($input, field) => {
                             $input.val(
                                 this.convert(field.latex(), stackInputID));
                             $latexInput.val(field.latex());
@@ -130,18 +130,18 @@ define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'],
                     }
                     else {
                         readOnly = true;
-                        visualmathinput.disable();
+                        wysiwyginput.disable();
                     }
 
                     // Set the previous step attempt data or autosaved
                     // (mod_quiz) value to the MathQuill field.
                     if ($latexInput.val()) {
-                        visualmathinput.field.write($latexInput.val());
+                        wysiwyginput.field.write($latexInput.val());
                         this.convert($latexInput.val(), stackInputID);
 
                     }
                     else if (latexResponse !== null && latexResponse !== '') {
-                        visualmathinput.field.write(latexResponse);
+                        wysiwyginput.field.write(latexResponse);
                         this.convert(latexResponse, stackInputID);
                     }
                 }
@@ -405,7 +405,7 @@ define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'],
                     '.stack-debug-wrapper');
 
                 if (this.editorVisible) {
-                    this.visualmathinput.forEach(input => {
+                    this.wysiwyginput.forEach(input => {
                         input.$input.show();
                         input.wrapper.hide();
                         if (this.controls !==
@@ -418,7 +418,7 @@ define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'],
 
                 }
                 else {
-                    this.visualmathinput.forEach(input => {
+                    this.wysiwyginput.forEach(input => {
                         input.$input.hide();
                         input.wrapper.show();
                         if (this.controls !==

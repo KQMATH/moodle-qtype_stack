@@ -244,13 +244,13 @@ $settings->add(new admin_setting_configselect('qtype_stack/matrixparens',
 
 
 // Options for visual math input editor.
-$settings->add(new admin_setting_heading('visualeditorinputoptionsheading',
+$settings->add(new admin_setting_heading('wysiwygeditorinputoptionsheading',
         get_string('settinginput_options_heading', 'qtype_stack'),
         get_string('settinginput_options_heading_desc', 'qtype_stack')));
 
-$settings->add(new admin_setting_configselect('qtype_stack/editorvisualmath',
-        get_string('settingeditorvisualmath', 'qtype_stack'),
-        get_string('settingeditorvisualmath_desc', 'qtype_stack'), '1',
+$settings->add(new admin_setting_configselect('qtype_stack/editorwysiwyg',
+        get_string('settingeditorwysiwyg', 'qtype_stack'),
+        get_string('settingeditorwysiwyg_desc', 'qtype_stack'), '1',
         stack_options::get_enabled_disabled_options()));
 
 $settings->add(new admin_setting_configselect('qtype_stack/mathinputmode',

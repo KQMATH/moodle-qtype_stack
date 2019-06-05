@@ -110,7 +110,7 @@ class stack_algebraic_input extends stack_input {
     public function get_supported_editors() {
         return array(
             'default'       => true,
-            'visualmath'    => true
+            'wysiwyg'       => true
         );
     }
 

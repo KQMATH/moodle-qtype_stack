@@ -1071,7 +1071,7 @@ abstract class stack_input {
     public function get_supported_editors() {
         return array(
             'default'       => true,
-            'visualmath'    => false
+            'wysiwyg'       => false
         );
     }
 

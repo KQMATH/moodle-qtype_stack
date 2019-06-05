@@ -337,8 +337,8 @@ $string['variantsselectionseed_help'] = 'Normally you can leave this box blank. 
 $string['verifyquestionandupdate'] = 'Verify the question text and update the form';
 $string['youmustconfirm'] = 'You must confirm here.';
 $string['editoroptions'] = 'Editor options';
-$string['editorvisualmath'] = 'VisualMath editor';
-$string['editorvisualmath_help'] = 'Enable or disable the VisualMath editor.';
+$string['editorwysiwyg'] = 'WYSIWYG editor';
+$string['editorwysiwyg_help'] = 'Enable or disable the WYSIWYG editor.';
 $string['mathinputmode'] = 'Math input mode';
 $string['mathinputmode_help'] = 'Controls which set of mathematical input buttons are to be displayed.';
 
@@ -419,8 +419,8 @@ $string['settingmaximalibraries_error'] = 'The following package is not supporte
 $string['settingmaximalibraries_failed'] = 'It appears as if some of the Maxima packages you have asked for have failed to load.  Please refer to the installation instructions for notes about this error.';
 $string['settinginput_options_heading'] = 'Default visual math editor input options';
 $string['settinginput_options_heading_desc'] = 'Used when creating a new question, or adding a new input to an existing question.';
-$string['settingeditorvisualmath'] = 'VisualMath editor';
-$string['settingeditorvisualmath_desc'] = 'Enable or disable the VisualMath editor.';
+$string['settingeditorwysiwyg'] = 'WYSIWYG editor';
+$string['settingeditorwysiwyg_desc'] = 'Enable or disable the WYSIWYG editor.';
 $string['settingmath_input_mode'] = 'Math input mode';
 $string['settingmath_input_mode_desc'] = 'Controls which set of mathematical input buttons are to be displayed.';
 

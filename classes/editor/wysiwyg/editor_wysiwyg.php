@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * STACK VisualMath editor class.
+ * STACK WYSIWYG editor class.
  *
  * @package    qtype
  * @subpackage stack
@@ -29,7 +29,7 @@ namespace qtype_stack\editor;
 require_once(__DIR__ . '/debug_renderer.php');
 use html_writer;
 
-class editor_visualmath {
+class editor_wysiwyg {
 
     private $inputs = array();
     private $questionid;
@@ -72,7 +72,7 @@ class editor_visualmath {
 
     public function is_enabled() {
         $isenabled = false;
-        if ($this->editoroptions->editorvisualmath == 1) {
+        if ($this->editoroptions->editorwysiwyg == 1) {
             $isenabled = true;
         }
 
@@ -80,7 +80,7 @@ class editor_visualmath {
     }
 
     public function register_input($name, $input) {
-        if ($input->get_supported_editors()['visualmath']) {
+        if ($input->get_supported_editors()['wysiwyg']) {
             $this->inputs[$name] = $input;
         }
     }

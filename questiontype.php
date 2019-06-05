@@ -152,11 +152,11 @@ class qtype_stack extends question_type {
         if (!$editoroptions) {
             $editoroptions = new stdClass();
             $editoroptions->questionid = $fromform->id;
-            $editoroptions->editorvisualmath = '';
+            $editoroptions->editorwysiwyg = '';
             $editoroptions->mathinputmode = '';
             $editoroptions->id = $DB->insert_record('qtype_stack_editor_options', $editoroptions);
         }
-        $editoroptions->editorvisualmath   = $fromform->editorvisualmath;
+        $editoroptions->editorwysiwyg   = $fromform->editorwysiwyg;
         $editoroptions->mathinputmode      = $fromform->mathinputmode;
         $editoroptions->id = $DB->update_record('qtype_stack_editor_options', $editoroptions);
 
@@ -386,7 +386,7 @@ class qtype_stack extends question_type {
 
         $question->editoroptions = $DB->get_record('qtype_stack_editor_options',
                 array('questionid' => $question->id),
-            'editorvisualmath, mathinputmode');
+            'editorwysiwyg, mathinputmode');
 
         $question->inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $question->id), 'name',
@@ -443,7 +443,7 @@ class qtype_stack extends question_type {
 
 
         $question->editoroptions = new stdClass();
-        $question->editoroptions->editorvisualmath  = $questiondata->editoroptions->editorvisualmath;
+        $question->editoroptions->editorwysiwyg  = $questiondata->editoroptions->editorwysiwyg;
         $question->editoroptions->mathinputmode     = $questiondata->editoroptions->mathinputmode;
 
 
@@ -1042,7 +1042,7 @@ class qtype_stack extends question_type {
         $output .= "    <matrixparens>{$options->matrixparens}</matrixparens>\n";
         $output .= "    <variantsselectionseed>{$format->xml_escape($options->variantsselectionseed)}</variantsselectionseed>\n";
 
-        $output .= "    <editorvisualmath>{$questiondata->editoroptions->editorvisualmath}</editorvisualmath>\n";
+        $output .= "    <editorwysiwyg>{$questiondata->editoroptions->editorwysiwyg}</editorwysiwyg>\n";
         $output .= "    <mathinputmode>{$questiondata->editoroptions->mathinputmode}</mathinputmode>\n";
 
 
@@ -1162,7 +1162,7 @@ class qtype_stack extends question_type {
         $fromform->matrixparens          = $format->getpath($xml, array('#', 'matrixparens', 0, '#'), '[');
         $fromform->variantsselectionseed = $format->getpath($xml, array('#', 'variantsselectionseed', 0, '#'), 'i');
 
-        $fromform->editorvisualmath      = $format->getpath($xml, array('#', 'editorvisualmath', 0, '#'), '0');
+        $fromform->editorwysiwyg      = $format->getpath($xml, array('#', 'editorwysiwyg', 0, '#'), '0');
         $fromform->mathinputmode         = $format->getpath($xml, array('#', 'mathinputmode', 0, '#'), 'normal');
 
         if (isset($xml['#']['input'])) {

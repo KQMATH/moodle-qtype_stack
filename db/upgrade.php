@@ -833,13 +833,13 @@ function xmldb_qtype_stack_upgrade($oldversion) {
 
     if ($oldversion < 2018122000) {
 
-        // Define field editorvisualmath to be added to qtype_stack_editor_options.
+        // Define field editorwysiwyg to be added to qtype_stack_editor_options.
         $table = new xmldb_table('qtype_stack_editor_options');
-        $field = new xmldb_field('editorvisualmath', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
+        $field = new xmldb_field('editorwysiwyg', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
         $fieldold1 = new xmldb_field('singlevars');
         $fieldold2 = new xmldb_field('addtimessign');
 
-        // Conditionally launch add field editorvisualmath.
+        // Conditionally launch add field editorwysiwyg.
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }

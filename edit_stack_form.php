@@ -317,13 +317,13 @@ class qtype_stack_edit_form extends question_edit_form {
         // Editor options
         $mform->addElement('header', 'optionsheader', stack_string('editoroptions'));
 
-        $mform->addElement('select', 'editorvisualmath', stack_string('editorvisualmath'), stack_options::get_enabled_disabled_options());
-        $mform->setDefault('editorvisualmath', $this->stackconfig->addtimessign);
-        $mform->addHelpButton('editorvisualmath', 'editorvisualmath', 'qtype_stack');
+        $mform->addElement('select', 'editorwysiwyg', stack_string('editorwysiwyg'), stack_options::get_enabled_disabled_options());
+        $mform->setDefault('editorwysiwyg', $this->stackconfig->addtimessign);
+        $mform->addHelpButton('editorwysiwyg', 'editorwysiwyg', 'qtype_stack');
 
         $mform->addElement('select', 'mathinputmode', stack_string('mathinputmode'), stack_options::get_math_input_mode_options());
         $mform->setDefault('mathinputmode', $this->stackconfig->mathinputmode);
-        $mform->hideif('mathinputmode', 'editorvisualmath', 'eq', 0);
+        $mform->hideif('mathinputmode', 'editorwysiwyg', 'eq', 0);
         $mform->addHelpButton('mathinputmode', 'mathinputmode', 'qtype_stack');
 
 
@@ -633,7 +633,7 @@ class qtype_stack_edit_form extends question_edit_form {
 
         $editoroptions = $question->editoroptions;
 
-        $question->editorvisualmath     = $editoroptions->editorvisualmath;
+        $question->editorwysiwyg        = $editoroptions->editorwysiwyg;
         $question->mathinputmode        = $editoroptions->mathinputmode;
         return $question;
     }

@@ -22,8 +22,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use qtype_stack\editor\editor_visualmath;
-require_once(__DIR__ . '/classes/editor/visualmath/editor_visualmath.php');
+use qtype_stack\editor\editor_wysiwyg;
+require_once(__DIR__ . '/classes/editor/wysiwyg/editor_wysiwyg.php');
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -100,18 +100,18 @@ class qtype_stack_renderer extends qtype_renderer {
         }
 
 
-        $visualmatheditor = new editor_visualmath($questionid, $prefix, $response, $question->editoroptions);
+        $wysiwygeditor = new editor_wysiwyg($questionid, $prefix, $response, $question->editoroptions);
 
         foreach ($question->inputs as $name => $input) {
-            $visualmatheditor->register_input($name, $input, $response);
+            $wysiwygeditor->register_input($name, $input, $response);
         }
 
 
         $result = '';
 
-        if ($visualmatheditor->is_used() && $visualmatheditor->is_enabled()) {
-            $result .= $visualmatheditor->render();
-            $params = $visualmatheditor->get_js_params_array();
+        if ($wysiwygeditor->is_used() && $wysiwygeditor->is_enabled()) {
+            $result .= $wysiwygeditor->render();
+            $params = $wysiwygeditor->get_js_params_array();
             $this->page->requires->js_call_amd('qtype_stack/wysiwyg-input', 'initialize', $params);
         }
 
@@ -123,7 +123,7 @@ class qtype_stack_renderer extends qtype_renderer {
                 array('class' => 'validationerror'));
         }
 
-        $result .= $visualmatheditor->render_debug_info();
+        $result .= $wysiwygeditor->render_debug_info();
 
         return $result;
     }

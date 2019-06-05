@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * STACK VisualMath debug renderer class.
+ * STACK WYSIWYG debug renderer class.
  *
  * @package    qtype
  * @subpackage stack
