@@ -1,6 +1,6 @@
 # Deploying
 
-Computer aided assessment of mathematics works in the following phases.
+Computer-aided assessment of mathematics works in the following phases.
 
 1. [Authoring](../Authoring/index.md),
 2. [Testing](Testing.md) and
@@ -20,13 +20,14 @@ We have chosen to add the extra deploy step, instead of generating on the fly, f
 
 Notes:
 
-1. If a question uses randomization then it must have at least one deployed variant before it can be presented to a student. Questions that don't use randomization cannot be deployed explicitly.  STACK automatically detects randomization.
-2. Variants are different if and only if the evaluated [question note](Question_note.md) is different. Any number of instances can be requested and deployed but only one instance of each [question note](Question_note.md) can be deployed.  It is possible to deploy \(n\) variants in one go, but the system will give up if too many duplicate question notes are generated.  The teacher is responsible to ensure question variants are different if and only if the question notes are different.  The deployment management also allows specific variants to be dropped.  You can also return to the question preview window and try a specific deployed variant.
-3. Deployment is not required for authors to test questions: an instance is generated on-the-fly.
+1. If an author does not deploy any variants (not advised!) then the student gets _any_ random variant.
+2. Questions that don't use randomization cannot be deployed explicitly.  STACK automatically detects randomization.
+3. Variants are different if and only if the evaluated [question note](Question_note.md) is different. Any number of instances can be requested and deployed but only one instance of each [question note](Question_note.md) can be deployed.  It is possible to deploy \(n\) variants in one go, but the system will give up if too many duplicate question notes are generated.  The teacher is responsible to ensure question variants are different if and only if the question notes are different.  The deployment management also allows specific variants to be dropped.  You can also return to the question preview window and try a specific deployed variant.
+4. Deployment is not required for authors to test questions: an instance is generated on-the-fly.
 
 ## How to deploy question variants ##
 
-The deployment interface can be found on the top of the [Testing](Testing.md) page.  This page also contains the list of currently deployed versions, and links to un-deply a variant.
+The deployment interface can be found on the top of the [Testing](Testing.md) page.  This page also contains the list of currently deployed versions, and links to un-deploy a variant.
 
 Notes:
 

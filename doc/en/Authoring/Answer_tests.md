@@ -41,7 +41,7 @@ e.g. Algebraic Equivalence, really need to assume which expression belongs to th
 | FeedBack  | This is a text string which is displayed to the student. It is [CASText](CASText.md) which may depend on properties of the student's answer.
 | Note      | This is a text string which is used for [Reporting](Reporting.md). Each answer note is concatenated with the previous notes and any contributions from the branch.
 
-The feedback is only shown to a student if the quiet option is set to 'no'.  If feedback is shown, then examples are given in the answer test test suite.  Login as the admin user then navigate to
+The feedback is only shown to a student if the quiet option is set to 'no'.  If feedback is shown, then examples are given in the answer-test test suite.  Login as the admin user then navigate to
 
      Home > Site administration > Plugins > Question types > Stack
 
@@ -53,7 +53,7 @@ Let us assume a teacher has asked a student to expand out \((x+1)^2\) and the re
 This is "correct" in the sense that it is algebraically equivalent to \((x+1)^2\) and is in expanded form
 (actually two separate mathematical properties) but "incorrect" in the sense that the student has not _gathered like terms_ by performing an addition \(x+x\).
 What about a response \(2x+x^2+1\)?  This is, arguably, better in the sense that the terms are gathered,
-but the student here an not _ordered_ terms to write their expression in canonical form.
+but the student here did not _order_ the terms to write their expression in canonical form.
 Hence, we need quite a number of different answer tests to establish equality in various senses of the word.
 
 | Test                                              | Description
@@ -61,7 +61,7 @@ Hence, we need quite a number of different answer tests to establish equality in
 | CasEqual                                          | Are the parse trees of the two expressions equal?  
 | [EqualComAss](Answer_tests.md#EqualComAss)        | Are they equal up to commutativity and associativity of addition and multiplication, together with their inverses minus and division? For example \[a+b=b+a\mbox{,}\] but \[x+x\neq 2x\mbox{.}\] This is very useful in elementary algebra, where we want the form of the answer exactly. Simplification is automatically switched off when this test is applied, otherwise it makes no sense.
 | [AlgEquiv](Answer_tests.md#AlgEquiv)              | Are they _algebraically equivalent_, i.e. does the difference simplify to zero?
-| SubstEquiv                                        | Can we find a substitution of the variables of \(ex_2\) into \(ex_1\) which renders \(ex_1\) algebraically equivalent to \(ex_2\)?  If you are only interested in ignoring case sensitivity, you can apply the [Maxima commands defined by STACK](../CAS/Maxima.md#Maxima_commands_defined_by_STACK) `exdowncase(ex)` to the arguments, before you apply one of the other answer tests.  Note, because we have to test every possibilities, the algorithm is factorial in ther number of variables.  For this reason, the test only works for 4 or fewer variables.
+| SubstEquiv                                        | Can we find a substitution of the variables of \(ex_2\) into \(ex_1\) which renders \(ex_1\) algebraically equivalent to \(ex_2\)?  If you are only interested in ignoring case sensitivity, you can apply the [Maxima commands defined by STACK](../CAS/Maxima.md#Maxima_commands_defined_by_STACK) `exdowncase(ex)` to the arguments, before you apply one of the other answer tests.  Note, because we have to test every possibility, the algorithm is factorial in the number of variables.  For this reason, the test only works for 4 or fewer variables.
 | SameType                                          | Are the two expressions of the same [types_of_object](../CAS/Maxima.md#Types_of_object)?  Note that this test works recursively over the entire expression.
 | SysEquiv                                          | Do two systems of polynomial equations have the same solutions? This test determines whether two systems of multivariate polynomials, i.e. polynomials with a number of variables, generate the same ideal, equivalent to checking they have the same solutions.
 
@@ -86,7 +86,7 @@ Note: exactly what it does depends on what objects are given to it.  In particul
 
 For sets, the CAS tries to write the expression in a canonical form.  It then compares the string representations these forms to remove duplicate elements and compare sets.  This is subtly different from trying to simplify the difference of two expressions to zero.  For example, imagine we have \(\{(x-a)^{6000}\}\) and \(\{(a-x)^{6000}\}\).  One canonical form is to expand out both sides.  While this work in principal, in practice this is much too slow for assessment. 
 
-Currently, \(\{-\frac{\sqrt{2}}{\sqrt{3}}\}\) and \(\{-\frac{2}{\sqrt{6}}\}\) are considered to be different.  If you want these to be considered the same you need to write them in a canonical form.   Instead of passing in just the sets, use the answer test to compare the following.
+Currently, \(\{-\frac{\sqrt{2}}{\sqrt{3}}\}\) and \(\{-\frac{2}{\sqrt{6}}\}\) are considered to be different.  If you want these to be considered the same, you need to write them in a canonical form.   Instead of passing in just the sets, use the answer test to compare the following.
 
     ev(radcan({-sqrt(2)/sqrt(3)}),simp);
     ev(radcan({-2/sqrt(6)}),simp);
@@ -101,11 +101,13 @@ This is Cardano's example from Ars Magna, but currently the AlgEquiv test cannot
 
 ### EqualComAss: Equality up to Associativity and Commutativity ### {#EqualComAss}
 
-This test seeks to establish whether two expressions are the same when the basic arithmetic operations of addition and multiplication are assumed to be nouns but are commutative and associative.  Hence, \(2x+y=y+2x\) but \(x+x+y\neq 2x+y\).  The unary minus commutes with multiplication in a way natural to establishing the required form of equivalence.
+This test seeks to establish whether two expressions are the same when the basic operations of arithmetic addition/multiplication and Boolean and/or are assumed to be nouns but are commutative and associative.  Hence, \(2x+y=y+2x\) but \(x+x+y\neq 2x+y\).  The unary minus commutes with multiplication in a way natural to establishing the required form of equivalence.
 
 Notice that this test does not include laws of indices, so \(x\times x \neq x^2\). Since we are dealing only with nouns \(-\times -\) does not simplify to \(1\). E.g. \(-x\times -x \neq x\times x \neq x^2\).  This also means that \(\sqrt{x}\) is not considered to be equivalent to \(x^{\frac{1}{2}}\) under this test.  In many situations this notation is taken mean the same thing, but internally in Maxima they are represented by different functions and not converted to a canonical form by the test.  Extra re-write rules could be added to achieve this, which would change the equivalence classes.
 
 This is a particularly useful test for checking that an answer is written in a particular form, e.g. "simplified".
+
+This test can also be used to establish \(\{4,4\} \neq \{4\}\), but \(\{1,2\} = \{2,1\}\) since the arguments of the set constructor function are commutative.  Sets are not associative, so \(\{1,2\} \neq \{\{1\},2\}\).  (See Maxima's `flatten` command.)
 
 ### CasEqual ###
 
@@ -140,7 +142,7 @@ These answer tests are used with [equivalence reasoning](../CAS/Equivalence_reas
 
 # Form {#Form}
 
-Often we wish to establish if the student's expression has the correct _form_.
+Often, we wish to establish if the student's expression has the correct _form_.
 For example, consider the following various written forms of \(x^2-4x+4\).
 
 \[(x-2)(x-2),\quad (x-2)^2,\quad  (2-x)^2,\quad  4\left(1-\frac{x}{2}\right)^2.\]
@@ -186,6 +188,18 @@ In elementary teaching, meaning 4. is unlikely to occur. Indeed, we might take t
 
 The FacForm test establishes that the expression is factored over the rational numbers.  If the coefficients of the polynomial are all real, at worst you will have quadratic irreducible terms.  There are some delicate cases such as: \((2-x)(3-x)\) vs  \((x-2)(x-3)\)  and \((1-x)^2\) vs \((x-1)^2\), which this test will cope with.
 
+# Factorisation of integers
+
+If you would like to ask a student to factor a polynomial, then do not use the FacForm answer test.  The FacForm answer test is designed to use with polynomials.
+
+Instead, switch off simplification and define
+
+    ta:factor(12);
+
+and use EqualComAss as the answer test.
+
+Note however that EqualComAss does not think that `2^2*3` and `2*2*3` are the same!
+
 # Numerical Precision {#Precision}
 
 These tests deal with the precision of numbers.  See dedicated page on [numerical answer tests](Answer_tests_numerical.md).
@@ -222,7 +236,7 @@ The question author must supply these options in the form of a list `[var, opt1,
 
 If one of the `opt?` is exactly the token `NOCONST` then the test will condone a lack of constant of integration.  That is, if a student has missed off a constant of integration, or the answers differ by a numerical constant, then full marks will be awarded.  Weird constants (e.g. \(+c^2\)) will still be flagged up.
 
-The answer test architecture only passes in the *answer* to the test.  The question is not available at that point, however, the answer test has to infer exactly which expression, including the algebraic form, the teacher has set in the question. This includes stripping off constants of integration and constants of integration may occur in a number of ways, e.g. in logarithms.
+The answer test architecture only passes in the *answer* to the test.  The question is not available at that point; however, the answer test has to infer exactly which expression, including the algebraic form, the teacher has set in the question. This includes stripping off constants of integration and constants of integration may occur in a number of ways, e.g. in logarithms.
 In many cases simply differentiating the teacher's answer is fine, in which case the question author need not worry.  Where this does not work, the question author will need to supply the expression from the question in the right form as an option to the answer test.  This is done simply by adding it to the list of options.
 
     [x, x*exp(5*x+7)]
@@ -237,7 +251,7 @@ The following tests do not use Maxima, but instead rely on PHP.
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | String         | This is a string match, ignoring leading and trailing white space which are stripped from all answers, using PHP's trim() function.
 | StringSloppy   | This function first converts both inputs to lower case, then removes all white space from the string and finally performs a strict string comparison.
-| RegExp         | A regular expression match, with the expression passed via the option. This regular expression match is performed with PHP's `preg_match()` function. For example, if you want to test if a string looks like a floating point number then use the regular expression `{[0-9]*\.[0-9]*}`
+| RegExp         | A regular expression match, with the expression passed via the option. This regular expression match is performed with PHP's `preg_match()` function. For example, if you want to test if a string looks like a floating-point number then use the regular expression `{[0-9]*\.[0-9]*}`
 |                | **NOTE:** we plan to remove this test in STACK version 4.3.  Do not use this test.
 
 # Scientific units #

@@ -1,436 +1,401 @@
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
+ * A javascript module to handle the real-time validation of the input the student types
+ * into STACK questions.
+ *
  * @package    qtype_stack
- * @author     André Storhaug <andr3.storhaug@gmail.com>
- * @copyright  2018 Norwegian University of Science and Technology (NTNU)
+ * @copyright  2018 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'qtype_stack/tex2max.amd', 'qtype_stack/visual-math-input'], function ($, TeX2Max, VisualMath) {
+define(['jquery', 'core/ajax', 'core/event'], function($, ajax, coreevent) {
 
-    // Constants
-    const FEEDBACK_ERROR_DELAY = 1000;
-    const WAITING_TIMER_DELAY = 1000;
+    "use strict";
 
-    const DEFAULT_TEX2MAX_OPTIONS = {
-        onlySingleVariables: false,
-        handleEquation: false,
-        addTimesSign: true,
-        onlyGreekName: true,
-        onlyGreekSymbol: false,
-        debugging: false
+    /**
+     * Class constructor representing an input in a Stack question.
+     *
+     * @class StackInput
+     * @constructor
+     * @param {String} name The input name, for example ans1.
+     * @param {Number} qaid The question-attempt id.
+     * @param {Object} input An object representing the input element for this input.
+     * @param {Object} validationDiv jQuery representation of the validation div.
+     */
+    var StackInput = function(name, qaid, input, validationDiv) {
+        this.input = input;
+        this.validationDiv = validationDiv;
+        this.name = name;
+        this.qaid = qaid;
+        this.delayTimeoutHandle = null;
+        this.input.addEventHanders(this);
+        this.lastValidatedValue = this.getIntputValue();
+        this.validationResults = {};
     };
 
+    /**
+     * @config TYPINGDELAY How long a pause in typing before we make an ajax validation request.
+     */
+    StackInput.prototype.TYPINGDELAY = 1000;
 
-    class wysiwyg {
-        constructor(questionid, debug, prefix, inputs, editorOptions) {
-            this.errorTimer;
-            this.waitingTimer;
-
-            this.editorVisible = true;
-            this.visualmathinput = [];
-            this.controls = null;
-            this.converters = new Map();
-
-            this.questionid = questionid;
-            this.prefix = prefix;
-            this.inputs = inputs;
-            this.editorOptions = editorOptions;
-
-
-            // this.stackInputIDs = stackInputIDs;
-            // this.latexInputIDs = latexInputIDs;
-            // this.latexResponses = latexResponses;
-            // this.questionOptions = questionOptions;
-
-            this.debug = debug;
-
-            this.initialize();
+    /**
+     * Cancel any typing pause timer.
+     */
+    StackInput.prototype.cancelTypingDelay = function() {
+        if (this.delayTimeoutHandle) {
+            clearTimeout(this.delayTimeoutHandle);
         }
+        this.delayTimeoutHandle = null;
+    };
 
+    /**
+     * Event handler that is fired when the input contents changes. Will do a
+     * validation after TYPINGDELAY if nothing else happens.
+     */
+    StackInput.prototype.valueChanging = function() {
+        this.cancelTypingDelay();
+        var self = this;
+        this.showWaiting();
+        this.delayTimeoutHandle = setTimeout(function() {
+            self.valueChanged();
+        }, this.TYPINGDELAY);
+        setTimeout(function() {
+            self.checkNoChange();
+        }, 0);
+    };
 
-        initialize() {
-            this.addEventListeners();
+    /**
+     * After a small delay, detect the case where the user has got the input back
+     * to where they started, so not validation is necessary.
+     */
+    StackInput.prototype.checkNoChange = function() {
+        if (this.getIntputValue() === this.lastValidatedValue) {
+            this.cancelTypingDelay();
+            this.validationDiv.removeClass('waiting');
+        }
+    };
 
-            let savedState = getEditorSelection(this.questionid);
-            if (savedState === null) {
-                this.editorVisible = true;
-            } else {
-                this.editorVisible = savedState;
+    /**
+     * Event handler that is fired when the input contents should be validated immediately.
+     */
+    StackInput.prototype.valueChanged = function() {
+        this.cancelTypingDelay();
+        if (!this.showValidationResults()) {
+            this.validateInput();
+        }
+    };
+
+    /**
+     * Make an ajax call to validate the input.
+     */
+    StackInput.prototype.validateInput = function() {
+        var self = this;
+        ajax.call([{
+            methodname: 'qtype_stack_validate_input',
+            args: {qaid: this.qaid, name: this.name, input: this.getIntputValue()},
+            done: function(response) {
+                self.validationReceived(response);
+            },
+            fail: function(response) {
+                self.showValidationFailure(response);
             }
-            saveEditorSelection(this.questionid, this.editorVisible);
+        }]);
+        this.showLoading();
+    };
 
+    /**
+     * Returns the current value of the input.
+     *
+     * @return {String}.
+     */
+    StackInput.prototype.getIntputValue = function() {
+        return this.input.getValue();
+    };
 
-            let readOnly = false;
+    /**
+     * Update the validation div to show the results of the validation.
+     *
+     * @param {String} response The data that came back from the ajax validation call.
+     */
+    StackInput.prototype.validationReceived = function(response) {
+        if (response.status === 'invalid') {
+            this.showValidationFailure(response);
+            return;
+        }
+        this.validationResults[response.input] = response;
+        this.showValidationResults();
+    };
 
-            this.showOrHideCheckButton(this.prefix);
+    /**
+     * Some browsers cannot execute JavaScript just by inserting script tags.
+     * To avoid that problem, remove all script tags from the given content,
+     * and run them later.
+     *
+     * @param {String} html HTML content
+     * @param {String} scriptcommands An array of script tags for later use.
+     * @return {String} HTML with JS removed
+     */
+    StackInput.prototype.extractScripts = function(html, scriptcommands) {
+        var scriptregexp = /<script[^>]*>([\s\S]*?)<\/script>/g;
+        var result;
+        while ((result = scriptregexp.exec(html)) !== null) {
+            scriptcommands.push(result[1]);
+        }
+        return html.replace(scriptregexp, '');
+    };
 
-            for (let i = 0; i < this.inputs.length; i++) {
-                let $stackInputDebug, $latexInputDebug;
+    /**
+     * Update the validation div to show the results of the validation.
+     */
+    StackInput.prototype.showValidationResults = function() {
+        /*eslint no-eval: "off"*/
+        var val = this.getIntputValue();
+        if (!this.validationResults[val]) {
+            this.showWaiting();
+            return false;
+        }
+        var results = this.validationResults[val];
+        this.lastValidatedValue = val;
+        var scriptcommands = [];
+        var html = this.extractScripts(results.message, scriptcommands);
+        this.validationDiv.html(html);
+        // Run script commands.
+        for (var i = 0; i < scriptcommands.length; i++) {
+            eval(scriptcommands[i]);
+        }
+        this.removeAllClasses();
+        if (!results.message) {
+            this.validationDiv.addClass('empty');
+        }
+        // This fires the Maths filters for content in the validation div.
+        coreevent.notifyFilterContentUpdated(this.validationDiv[0]);
+        return true;
+    };
 
-                let stackInputID = this.inputs[i].inputid;
-                let latexInputID = this.inputs[i].latexinputid;
-                let latexResponse = this.inputs[i].latexresponse;
-                let inputOptions = this.formatOptionsObj(this.inputs[i].inputoptions);
+    /**
+     * Update the validation div after an ajax validation call failed.
+     *
+     * @param {String} response The data that came back from the ajax validation call.
+     */
+    StackInput.prototype.showValidationFailure = function(response) {
+        this.lastValidatedValue = '';
+        // Reponse usually contains backtrace, debuginfo, errorcode, link, message and moreinfourl.
+        this.validationDiv.html(response.message);
+        this.removeAllClasses();
+        this.validationDiv.addClass('error');
+        // This fires the Maths filters for content in the validation div.
+        coreevent.notifyFilterContentUpdated(this.validationDiv[0]);
+    };
 
-                let latexInput = document.getElementById(latexInputID);
-                let $latexInput = $(latexInput);
+    /**
+     * Display the loader icon.
+     */
+    StackInput.prototype.showLoading = function() {
+        this.removeAllClasses();
+        this.validationDiv.addClass('loading');
+    };
 
-                let stackInput = document.getElementById(stackInputID);
-                let $stackInput = $(stackInput);
+    /**
+     * Update the validation div to show that the input contents have changed,
+     * so the validation results are no longer relevant.
+     */
+    StackInput.prototype.showWaiting = function() {
+        this.removeAllClasses();
+        this.validationDiv.addClass('waiting');
+    };
 
-                let wrapper = document.createElement('div');
-                $stackInput.wrap(wrapper);
-                let $parent = $stackInput.parent();
+    /**
+     * Strip all our class names from the validation div.
+     */
+    StackInput.prototype.removeAllClasses = function() {
+        this.validationDiv.removeClass('empty');
+        this.validationDiv.removeClass('error');
+        this.validationDiv.removeClass('loading');
+        this.validationDiv.removeClass('waiting');
+    };
 
-                if (this.debug) {
-                    let stackInputDebug = document.getElementById(stackInputID + '_debug');
-                    $stackInputDebug = $(stackInputDebug);
+    /**
+     * Class constructor representing a simple input in a Stack question.
+     *
+     * @class StackSimpleInput
+     * @constructor
+     * @param {Object} input The input element wrapped in jquery.
+     */
+    var StackSimpleInput = function(input) {
+        this.input = input;
+    };
 
-                    let latexInputDebug = document.getElementById(latexInputID + '_debug');
-                    $latexInputDebug = $(latexInputDebug);
+    /**
+     * Add the event handler to call when the user input changes.
+     *
+     * @param {Object} validator A StackInput object
+     */
+    StackSimpleInput.prototype.addEventHanders = function(validator) {
+        // The input event fires on any change in value, even if pasted in or added by speech
+        // recognition to dictate text. Change only fires after loosing focus.
+        // Should also work on mobile.
+        this.input.on('input', null, null, validator.valueChanging.bind(validator));
+    };
+
+    /**
+     * Get the current value of this input.
+     *
+     * @return {String}.
+     */
+    StackSimpleInput.prototype.getValue = function() {
+        return this.input.val().replace(/^\s+|\s+$/g, '');
+    };
+
+    /**
+     * Class constructor representing a textarea input.
+     *
+     * @class StackTextareaInput
+     * @constructor
+     * @param {Object} textarea The input element wrapped in jquery.
+     */
+    var StackTextareaInput = function(textarea) {
+        this.textarea = textarea;
+    };
+
+    /**
+     * Add the event handler to call when the user input changes.
+     *
+     * @param {Object} validator A StackInput object
+     */
+    StackTextareaInput.prototype.addEventHanders = function(validator) {
+        this.textarea.on('input', null, null, validator.valueChanging.bind(validator));
+    };
+
+    /**
+     * Get the current value of this input.
+     *
+     * @return {String}.
+     */
+    StackTextareaInput.prototype.getValue = function() {
+        var raw = this.textarea.val().replace(/^\s+|\s+$/g, '');
+        return raw.split(/\s*[\r\n]\s*/).join('<br>');
+    };
+
+    /**
+     * Class constructor representing matrx inputs (one input).
+     *
+     * @class StackMatrixInput
+     * @constructor
+     * @param {String} idPrefix.
+     * @param {Object} container jQuery object wrapping a matrix of inputs.
+     */
+    var StackMatrixInput = function(idPrefix, container) {
+        this.container = container;
+        this.idPrefix  = idPrefix;
+        var numcol = 0;
+        var numrow = 0;
+        this.container.find('input[type=text]').each(function(i, element) {
+            var name = $(element).attr('name');
+            if (name.slice(0, idPrefix.length + 5) !== idPrefix + '_sub_') {
+                return;
+            }
+            var bits = name.substring(idPrefix.length + 5).split('_');
+            numrow = Math.max(numrow, parseInt(bits[0], 10) + 1);
+            numcol = Math.max(numcol, parseInt(bits[1], 10) + 1);
+        });
+        this.numcol = numcol;
+        this.numrow = numrow;
+    };
+
+    /**
+     * Add the event handler to call when the user input changes.
+     *
+     * @param {Object} validator A StackInput object
+     */
+    StackMatrixInput.prototype.addEventHanders = function(validator) {
+        this.container.delegate('input', 'input[type=text]', null, validator.valueChanging.bind(validator));
+    };
+
+    /**
+     * Get the current value of this input.
+     *
+     * @return {String}.
+     */
+    StackMatrixInput.prototype.getValue = function() {
+        var numcol = this.numcol;
+        var numrow = this.numrow;
+        var idPrefix = this.idPrefix;
+        var values = new Array(numrow);
+        for (var i = 0; i < numrow; i++) {
+            values[i] = new Array(numcol);
+        }
+        this.container.find('input[type=text]').each(function(i, element) {
+            var name = $(element).attr('name');
+            if (name.slice(0, idPrefix.length + 5) !== idPrefix + '_sub_') {
+                return;
+            }
+            var bits = name.substring(idPrefix.length + 5).split('_');
+            values[bits[0]][bits[1]] = $(element).val().replace(/^\s+|\s+$/g, '');
+        });
+        return 'matrix([' + values.join('],[') + '])';
+    };
+
+    /**
+     * The Stack question init return object.
+     *
+     * @alias qtype_stack/input
+     */
+    var t = {
+        initInputs: function(inputs, qaid, prefix) {
+            var allok = true;
+            for (var i = 0; i < inputs.length; i++) {
+                var name = inputs[i];
+                allok = t.initInput(name, qaid, prefix) && allok;
+            }
+            var outerdiv = $('input[name="' + prefix + ':sequencecheck"]').parents('div.que.stack');
+            if (allok && outerdiv && (outerdiv.hasClass('dfexplicitvaildate') || outerdiv.hasClass('dfcbmexplicitvaildate'))) {
+                // With instant validation, we don't need the Check button, so hide it.
+                var button = outerdiv.find('.im-controls input.submit');
+                if (button.attr('id') === prefix + '-submit') {
+                    button.hide();
                 }
+                t.initInput(inputs[i], qaid, prefix);
+            }
+        },
 
-
-                try {
-                    let converter = new TeX2Max(inputOptions);
-                    this.converters.set(stackInputID, converter);
-                } catch (error) {
-                    this.renderErrorFeedback(error.message, stackInputID);
-                    return;
-                }
-
-                let visualmathinput = new VisualMath.Input('#' + $.escapeSelector(stackInputID), $parent);
-                this.visualmathinput.push(visualmathinput); // Register the new input
-                visualmathinput.$input.hide();
-                if (!visualmathinput.$input.prop('readonly')) {
-                    visualmathinput.onEdit = ($input, field) => {
-                        $input.val(this.convert(field.latex(), stackInputID));
-                        $latexInput.val(field.latex());
-                        $input.get(0).dispatchEvent(new Event('change')); // Event firing needs to be on a vanilla dom object.
-
-                        if (this.debug) {
-                            $stackInputDebug.html(this.convert(field.latex(), stackInputID));
-                            $latexInputDebug.html(field.latex());
-                        }
-                    };
-
+        initInput: function(name, qaid, prefix) {
+            var valinput = $(document.getElementById(prefix + name + '_val')); // $('#' + prefix + name + '_val') does not work!
+            if (!valinput) {
+                return false;
+            }
+            // See if it is an ordinary input.
+            var input = $(document.getElementById(prefix + name));
+            if (input.length) {
+                if (input[0].nodeName === 'TEXTAREA') {
+                    new StackInput(name, qaid, new StackTextareaInput(input), valinput);
                 } else {
-                    readOnly = true;
-                    visualmathinput.disable();
+                    // A new StackInput object is required.
+                    new StackInput(name, qaid, new StackSimpleInput(input), valinput);
                 }
-
-                // Set the previous step attempt data or autosaved (mod_quiz) value to the MathQuill field.
-                if ($latexInput.val()) {
-                    visualmathinput.field.write($latexInput.val());
-                    this.convert($latexInput.val(), stackInputID)
-
-                } else if (latexResponse !== null && latexResponse !== "") {
-                    visualmathinput.field.write(latexResponse);
-                    this.convert(latexResponse, stackInputID)
-                }
+                return true;
             }
-
-
-            if (!readOnly) {
-                this.buildInputControls(this.editorOptions['mathinputmode']);
-            } else {
-                let selectionButton = $('#' + this.questionid + 'editor_selection');
-                selectionButton.hide();
+            // See if it is a matrix input.
+            var matrix = $(document.getElementById(prefix + name + '_container'));
+            if (matrix.length) {
+                new StackInput(name, qaid, new StackMatrixInput(prefix + name, matrix), valinput);
+                return true;
             }
-
-
-            // If input should be disabled, controls should be hidden.
-            if (!this.editorVisible) {
-                this.editorVisible = true;
-                this.toggleEditor(false);
-            }
-        }
-
-        convert(latex, stackInputID) {
-            let result = '';
-            let converter = this.converters.get(stackInputID);
-
-            clearTimeout(this.errorTimer);
-
-            if (!latex) {
-                this.hideTeX2MaXFeedback(stackInputID);
-
-                let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-                let $stackValidationFeedback = $(stackValidationFeedback);
-                $stackValidationFeedback.hide();
-
-                return result;
-            }
-
-            try {
-                result = converter.toMaxima(latex);
-                this.hideTeX2MaXFeedback(stackInputID);
-
-            } catch (error) {
-                this.renderErrorFeedback(error.message, stackInputID);
-            }
-
-            return result;
-        }
-
-        removeAllValidationClasses(selector) {
-            let validationFeedback = document.getElementById(selector);
-            let $validationFeedback = $(validationFeedback);
-            $validationFeedback.removeClass('empty');
-            $validationFeedback.removeClass('error');
-            $validationFeedback.removeClass('loading');
-            $validationFeedback.removeClass('waiting');
-        }
-
-        resetStackValidation(stackInputID) {
-            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-            let $stackValidationFeedback = $(stackValidationFeedback);
-
-            $stackValidationFeedback.removeAttr("style");
-        }
-
-        hideTeX2MaXFeedback(stackInputID) {
-            let existingFeedback = document.getElementById(stackInputID + '_tex2max');
-            let $existingFeedback = $(existingFeedback);
-
-            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-
-            let parent = this;
-            if (stackValidationFeedback.style.display !== "") {
-                $existingFeedback.toggleClass('waiting', true);
-                parent.waitingTimer = setTimeout(() => {
-                    parent.removeAllValidationClasses(stackInputID + '_tex2max');
-                    $existingFeedback.toggleClass('empty', true);
-                    parent.resetStackValidation(stackInputID);
-                }, WAITING_TIMER_DELAY);
-
-                setTimeout(function () {
-                    parent.removeAllValidationClasses(stackInputID + '_tex2max');
-                    $existingFeedback.toggleClass('waiting', true);
-                }, 0);
-
-            } else {
-                $existingFeedback.toggleClass('empty', true);
-            }
-        }
-
-        renderErrorFeedback(errorMessage, stackInputID) {
-            clearTimeout(this.waitingTimer);
-
-            let existingFeedback = document.getElementById(stackInputID + '_tex2max');
-            let $existingFeedback = $(existingFeedback);
-            if (existingFeedback && !$existingFeedback.hasClass('empty')) {
-                this.removeAllValidationClasses(stackInputID + '_tex2max');
-                $existingFeedback.toggleClass('waiting', true);
-            }
-
-            this.errorTimer = setTimeout(() => {
-                this.renderTeX2MaXFeedback(errorMessage, stackInputID)
-            }, FEEDBACK_ERROR_DELAY);
-        }
-
-
-        renderTeX2MaXFeedback(errorMessage, stackInputID) {
-            if (!errorMessage) errorMessage = "";
-
-            let feedbackMessage = "This answer is invalid.";
-            let stackValidationFeedback = document.getElementById(stackInputID + '_val');
-            let $stackValidationFeedback = $(stackValidationFeedback);
-            $stackValidationFeedback.hide();
-
-            let existingFeedback = document.getElementById(stackInputID + '_tex2max');
-            if (existingFeedback) {
-                this.removeAllValidationClasses(stackInputID + '_tex2max');
-
-                let existingErrorMessageParagraph = document.getElementById(stackInputID + '_errormessage');
-                existingErrorMessageParagraph.innerHTML = errorMessage;
-
-            } else {
-                let feedbackWrapper = document.createElement('div');
-                feedbackWrapper.setAttribute('class', 'tex2max-feedback-wrapper');
-                feedbackWrapper.setAttribute('id', stackInputID + '_tex2max');
-
-                let feedbackMessageParagraph = document.createElement('p');
-                let errorMessageParagraph = document.createElement('p');
-                errorMessageParagraph.setAttribute('id', stackInputID + '_errormessage');
-
-                feedbackMessageParagraph.innerHTML = feedbackMessage;
-                errorMessageParagraph.innerHTML = errorMessage;
-
-                feedbackWrapper.append(feedbackMessageParagraph);
-                feedbackWrapper.append(errorMessageParagraph);
-
-                $stackValidationFeedback.after(feedbackWrapper);
-            }
-        }
-
-        showOrHideCheckButton() {
-            for (let i = 0; i < this.inputs.length; i++) {
-                let $outerdiv = $(document.getElementById(this.inputs[i].inputid)).parents('div.que.stack').first();
-                if ($outerdiv && ($outerdiv.hasClass('dfexplicitvaildate') || $outerdiv.hasClass('dfcbmexplicitvaildate'))) {
-                    // With instant validation, we don't need the Check button, so hide it.
-                    let button = $outerdiv.find('.im-controls input.submit').first();
-                    if (button.attr('id') === this.prefix + '-submit') {
-                        button.hide();
-                    }
-                }
-            }
-        }
-
-        formatOptionsObj(rawOptions) {
-            let options = {};
-
-            for (let key in rawOptions) {
-                if (!rawOptions.hasOwnProperty(key)) continue;
-
-                let value = rawOptions[key];
-                switch (key) {
-                    case "insertStars":
-
-                        if (value === 2 || value === 5) {
-                            options.onlySingleVariables = true;
-                        } else {
-                            options.onlySingleVariables = false;
-                        }
-
-                        if (value === 1 || value === 2 || value === 4 || value === 5) {
-                            options.addTimesSign = true;
-                        } else {
-                            options.addTimesSign = false;
-                        }
-                        break;
-                    default :
-                        break;
-                }
-            }
-
-            options = Object.assign(DEFAULT_TEX2MAX_OPTIONS, options);
-            return options;
-        }
-
-        buildInputControls(mode) {
-            if (!mode) throw new Error('No mathinputmode is set');
-
-            this.controls = new VisualMath.ControlList('#' + this.questionid + 'controls_wrapper');
-            let controlNames = [];
-
-            switch (mode) {
-                case 'simple':
-                    controlNames = ['sqrt', 'divide', 'pi', 'caret'];
-                    this.controls.enable(controlNames);
-                    break;
-                case 'normal':
-                    controlNames = ['sqrt', 'divide', 'nchoosek', 'pi', 'caret'];
-                    this.controls.enable(controlNames);
-                    break;
-                case 'advanced':
-                    this.controls.enableAll();
-                    break;
-                case 'none':
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        addEventListeners() {
-            let selectionButton = $('#' + this.questionid + 'editor_selection');
-            let parent = this;
-            selectionButton.on('click', function () {
-                parent.toggleEditor(true);
-            });
-        }
-
-        toggleEditor(save) {
-            let stackInputDebug = document.getElementById(this.inputs[0].inputid + '_debug');
-            let $stackInputDebug = $(stackInputDebug);
-            let debugWrapper = $stackInputDebug.closest(".stack-debug-wrapper");
-
-            if (this.editorVisible) {
-                this.visualmathinput.forEach(input => {
-                    input.$input.show();
-                    input.wrapper.hide();
-                    if (this.controls !== null) this.controls.$wrapper.hide();
-                    this.editorVisible = false;
-                });
-                debugWrapper.hide();
-
-            } else {
-                this.visualmathinput.forEach(input => {
-                    input.$input.hide();
-                    input.wrapper.show();
-                    if (this.controls !== null) this.controls.$wrapper.show();
-                    this.editorVisible = true;
-                });
-                debugWrapper.show();
-            }
-
-            if (save) {
-                saveEditorSelection(this.questionid, this.editorVisible);
-            }
-        }
-
-    }
-
-    /**
-     * Returns true or false whether the wysiwyg editor were visible.
-     * @returns {null|boolean} true if the wysiwyg editor were visible
-     */
-    function getEditorSelection(questionid) {
-        let result = null;
-        if (!sessionStorage.getItem('editor_selection')) {
-            result = null;
-        } else {
-            let rawData = sessionStorage.getItem('editor_selection');
-            let editorSelectionData = JSON.parse(rawData);
-
-            for (let key in editorSelectionData) {
-                if (editorSelectionData.hasOwnProperty(key)) {
-                    if (key === questionid) {
-                        result = editorSelectionData[key]
-                    }
-                }
-            }
-            if (result === null) result = false;
-        }
-        return result;
-    }
-
-    /**
-     * Saves the viewing state of the wysiwyg editor in the sessionStorage.
-     */
-    function saveEditorSelection(questionid, editorSelection) {
-        let editorSelectionData;
-
-        if (!sessionStorage.getItem('editor_selection')) {
-            editorSelectionData = {};
-            editorSelectionData[questionid] = editorSelection;
-
-        } else {
-            let rawData = sessionStorage.getItem('editor_selection');
-            editorSelectionData = JSON.parse(rawData);
-
-            let found = false;
-            for (let key in editorSelectionData) {
-                if (editorSelectionData.hasOwnProperty(key)) {
-                    if (key == questionid) {
-                        found = true;
-                        editorSelectionData[key] = editorSelection;
-                    }
-                }
-            }
-            if (!found) {
-                editorSelectionData[questionid] = editorSelection;
-            }
-        }
-        sessionStorage.setItem('editor_selection', JSON.stringify(editorSelectionData));
-    }
-
-
-    return {
-        initialize: (questionid, debug, prefix, inputs, editorOptions) => {
-            if (!inputs.length > 0) return;
-            let editor = new wysiwyg(questionid, debug, prefix, inputs, editorOptions);
-
+            // Give up.
+            return false;
         }
     };
-
+    return t;
 });

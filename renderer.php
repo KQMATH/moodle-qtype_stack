@@ -95,8 +95,8 @@ class qtype_stack_renderer extends qtype_renderer {
 
         // Initialise automatic validation, if enabled.
         if ($qaid && stack_utils::get_config()->ajaxvalidation) {
-            $this->page->requires->yui_module('moodle-qtype_stack-input',
-                    'M.qtype_stack.init_inputs', array($inputstovaldiate, $qaid, $qa->get_field_prefix()));
+            $this->page->requires->js_call_amd('qtype_stack/input', 'initInputs',
+                    [$inputstovaldiate, $qaid, $qa->get_field_prefix()]);
         }
 
 
@@ -112,7 +112,7 @@ class qtype_stack_renderer extends qtype_renderer {
         if ($visualmatheditor->is_used() && $visualmatheditor->is_enabled()) {
             $result .= $visualmatheditor->render();
             $params = $visualmatheditor->get_js_params_array();
-            $this->page->requires->js_call_amd('qtype_stack/input', 'initialize', $params);
+            $this->page->requires->js_call_amd('qtype_stack/wysiwyg-input', 'initialize', $params);
         }
 
         $result .= $this->question_tests_link($question, $options) . $questiontext;

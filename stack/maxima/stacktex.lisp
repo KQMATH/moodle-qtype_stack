@@ -179,7 +179,10 @@
             (mapcan #'(lambda(b e)
                 `(,dsym ,(simplifya (mfuncall `$simplify `((mexpt) ,b ,(mfuncall `$simplify e))) nil)))
                 vars ords))))
-    `((mquotient) (($blankmult) ,(simplifya numer nil) ,arg) ,denom)
+      (if (symbolp arg)
+      `((mquotient) (($blankmult) ,(simplifya numer nil) ,arg) ,denom)
+      `(($blankmult) ((mquotient) ,numer ,denom) ,arg)
+      )
      ))
 
 
@@ -340,3 +343,11 @@
 ;; Sort out binding power of %union to display correctly.
 ;; tex-support is defined in to_poly_solve_extra.lisp.
 (defprop $%union 115. tex-rbp)
+
+
+;; Added 19 Dec 2018.
+;; Based src/mformat.lisp
+
+;; Suppress warnings printed by mtell, e.g. by solve, rat and other functions.
+;; Use the Maxima variable stack_mtell_quiet.
+(defun mtell (&rest l) (cond ((eq $stack_mtell_quiet $true) (values)) (t (apply #'mformat nil l))));
