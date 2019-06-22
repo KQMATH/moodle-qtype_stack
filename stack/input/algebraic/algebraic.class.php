@@ -103,14 +103,9 @@ class stack_algebraic_input extends stack_input {
         return $expected;
     }
 
-    /**
-     * Return an array with the supported editors
-     * @return array the supported editors
-     */
-    public function get_supported_editors() {
+    public static function get_supported_editors() {
         return array(
-            'default'       => true,
-            'wysiwyg'       => true
+            'wysiwyg'       => true,
         );
     }
 

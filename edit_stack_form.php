@@ -54,6 +54,9 @@ class qtype_stack_edit_form extends question_edit_form {
     /** @var array the set of choices used for the type of all inputs. */
     protected $typechoices;
 
+    /** @var array the set of choices used for the type of all editors. */
+    protected $editortypechoices;
+
     /** @var array the set of choices used for the type of all answer tests. */
     protected $answertestchoices;
 
@@ -160,6 +163,9 @@ class qtype_stack_edit_form extends question_edit_form {
 
         // Prepare input types.
         $this->typechoices = stack_input_factory::get_available_type_choices();
+
+        // Prepare editor types.
+        $this->editortypechoices = stack_editor_factory::get_available_type_choices();
 
         // Prepare answer test types.
         $answertests = stack_ans_test_controller::get_available_ans_tests();
@@ -312,22 +318,8 @@ class qtype_stack_edit_form extends question_edit_form {
         // Hints.
         $this->add_interactive_settings();
 
-
-
         // Editor options
-        $mform->addElement('header', 'optionsheader', stack_string('editoroptions'));
-
-        $mform->addElement('select', 'editorwysiwyg', stack_string('editorwysiwyg'), stack_options::get_enabled_disabled_options());
-        $mform->setDefault('editorwysiwyg', $this->stackconfig->addtimessign);
-        $mform->addHelpButton('editorwysiwyg', 'editorwysiwyg', 'qtype_stack');
-
-        $mform->addElement('select', 'mathinputmode', stack_string('mathinputmode'), stack_options::get_math_input_mode_options());
-        $mform->setDefault('mathinputmode', $this->stackconfig->mathinputmode);
-        $mform->hideif('mathinputmode', 'editorwysiwyg', 'eq', 0);
-        $mform->addHelpButton('mathinputmode', 'mathinputmode', 'qtype_stack');
-
-
-
+        $this->definition_editor($mform);
 
         // Replace standard penalty input at the bottom with the one we want.
         $mform->removeElement('multitriesheader');
@@ -339,6 +331,36 @@ class qtype_stack_edit_form extends question_edit_form {
         $mform->addHelpButton('penalty', 'penalty', 'qtype_stack');
         $mform->setDefault('penalty', 0.1000000);
         $mform->addRule('penalty', null, 'required', null, 'client');
+    }
+
+    /**
+     * Add the form elements for the question editor.
+     * @param MoodleQuickForm $mform the form being assembled.
+     */
+    protected function definition_editor(MoodleQuickForm $mform) {
+        $mform->addElement('header', 'editoroptionsheader', stack_string('editoroptions'));
+
+        $editortype = isset($this->question->editor->type) ? $this->question->editor->type : 'none';
+        $mform->addElement('hidden', 'originaleditor', $editortype);
+        $mform->setType('originaleditor', PARAM_RAW);
+
+        $submitted = optional_param('editortype', null, PARAM_RAW);
+        if (isset($submitted) && $submitted !== $editortype && $editortype !== 'none') {
+            $mform->addElement('static', 'editorwarning', '', stack_string('editorchangemaydeletedata', $editortype));
+            $mform->addElement('advcheckbox', 'editordeleteconfirm', '', stack_string('editorrchangedconfirm'));
+            $mform->setDefault('editordeleteconfirm', 0);
+            $mform->setExpanded('editoroptionsheader');
+        }
+
+        $mform->addElement('select', 'editortype', stack_string('editortype'), $this->editortypechoices);
+        $mform->setDefault('editortype', $this->stackconfig->editortype);
+        $mform->addHelpButton('editortype', 'editortype', 'qtype_stack');
+
+        // Add all editor options.
+        $editorsoptions = stack_editor_factory::get_options_used();
+        foreach ($editorsoptions as $editor => $options) {
+            stack_editor_factory::add_options_to_moodleform($mform, $editor);
+        }
     }
 
     /**
@@ -622,19 +644,26 @@ class qtype_stack_edit_form extends question_edit_form {
     }
 
     /**
-     * Do the bit of {@link data_preprocessing()} for the data in the qtype_stack_editors table.
+     * Do the bit of {@link data_preprocessing()} for the data in the qtype_stack_editor table.
      * @param object $question the raw data.
      * @return object the updated $question updated object closer to being ready to send to the form.
      */
     protected function data_preprocessing_editor_options($question) {
-        if (!isset($question->editoroptions)) {
+        if (!isset($question->editor)) {
             return $question;
         }
 
-        $editoroptions = $question->editoroptions;
+        if (isset($question->editor->type)) {
+            $question->editortype = $question->editor->type;
 
-        $question->editorwysiwyg        = $editoroptions->editorwysiwyg;
-        $question->mathinputmode        = $editoroptions->mathinputmode;
+            $options = json_decode($question->editor->options, true);
+            foreach ($options as $name => $option) {
+                $question->{$question->editor->type . $name} = $option;
+            }
+        } else {
+            $question->editortype = 'none';
+        }
+
         return $question;
     }
 

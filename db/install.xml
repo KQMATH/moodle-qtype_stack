@@ -34,12 +34,12 @@
         <KEY NAME="questionid" TYPE="foreign-unique" FIELDS="questionid" REFTABLE="question" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="qtype_stack_editor_options" COMMENT="Stores the editor options for each Stack question">
+    <TABLE NAME="qtype_stack_editor" COMMENT="Stores the editor options for each question">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key link to question.id"/>
-        <FIELD NAME="editorwysiwyg" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Enable or disable the WYSIWYG editor."/>
-        <FIELD NAME="mathinputmode" TYPE="char" LENGTH="32" NOTNULL="true" DEFAULT="normal" SEQUENCE="false" COMMENT="The type of math input control button layout to be displayed."/>
+        <FIELD NAME="type" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="The type of editor this is."/>
+        <FIELD NAME="options" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Editor options that are interpreted in an editor-specific way. Stored in JSON format."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

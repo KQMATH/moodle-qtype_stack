@@ -1068,15 +1068,14 @@ abstract class stack_input {
      * Return an array with the supported editors
      * @return array the supported editors
      */
-    public function get_supported_editors() {
+    public static function get_supported_editors() {
         return array(
-            'default'       => true,
             'wysiwyg'       => false
         );
     }
 
-
-    /* Allows individual input types to change the way the list of variables is tagged.
+    /**
+     * Allows individual input types to change the way the list of variables is tagged.
      * Used by the units input type.
      */
     protected function tag_listofvariables($vars) {

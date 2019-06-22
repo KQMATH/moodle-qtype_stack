@@ -87,3 +87,28 @@ class qtype_stack_admin_setting_input_types extends admin_setting_configselect {
         return true;
     }
 }
+
+
+/**
+ * Admin settings class for the STACK editor type choices.
+ *
+ * So we can lazy-load the choices.
+ *
+ * @author     André Storhaug <andr3.storhaug@gmail.com>
+ * @copyright  2019 Norwegian University of Science and Technology
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class qtype_stack_admin_setting_editor_types extends admin_setting_configselect {
+    public function load_choices() {
+        global $CFG;
+        require_once($CFG->dirroot . '/question/type/stack/stack/editor/factory.class.php');
+
+        if (is_array($this->choices)) {
+            return true;
+        }
+
+        $this->choices = stack_editor_factory::get_available_type_choices();
+
+        return true;
+    }
+}

@@ -304,28 +304,4 @@ class stack_options {
             '2' => get_string('showvalidationyesnovars', 'qtype_stack'),
         );
     }
-
-    /**
-     * @return array of choices for the mathematical input modes select menu.
-     */
-    public static function get_math_input_mode_options() {
-        return array(
-            'simple' => get_string('modesimple', 'qtype_stack'),
-            'normal' => get_string('modenormal', 'qtype_stack'),
-            'advanced' => get_string('modeadvanced', 'qtype_stack'),
-            'none' => get_string('modenone', 'qtype_stack'),
-        );
-
-    }
-
-    /**
-     * @return array for enabled or disabled.
-     */
-    public static function get_enabled_disabled_options() {
-        return array(
-            '0' => get_string('disabled', 'qtype_stack'),
-            '1' => get_string('enabled', 'qtype_stack'),
-        );
-
-    }
 }

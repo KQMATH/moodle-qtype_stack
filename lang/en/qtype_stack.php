@@ -86,6 +86,14 @@ $string['defaultprtincorrectfeedback'] = '<span style="font-size: 1.5em; color:r
 $string['defaultprtpartiallycorrectfeedback'] = '<span style="font-size: 1.5em; color:orange;"><i class="fa fa-adjust"></i></span> Your answer is partially correct.';
 $string['branchfeedback'] = 'Node branch feedback';
 $string['branchfeedback_help'] = 'This is CASText which may depend on any of the question variables, input elements or the feedback variables. This is evaluated and displayed to the student if they pass down this branch.';
+
+$string['editoroptions'] = 'Editor options';
+$string['editortype'] = 'Editor type';
+$string['editortype_help'] = 'Select an editor type to use for this question.';
+$string['editortypenotsupported'] = 'Editor type \'{$a}\' is not supported by any of the selected input types.';
+$string['editorchangemaydeletedata'] = 'You are changing the editor used in this question. If you save the question now, this may result in loss of data specific to the \'{$a}\' editor. Please confirm that you want to do this. Alternatively reselect the \'{$a}\' editor from the editor list.';
+$string['editorrchangedconfirm'] = 'I confirm that I want to change the editor used in this question.';
+
 $string['inputtest'] = 'Input test';
 $string['inversetrig'] = 'Inverse trigonometric functions';
 $string['inversetrig_help'] = 'Controls how inverse trigonometric functions are displayed in CAS output.';
@@ -336,19 +344,6 @@ $string['variantsselectionseed'] = 'Random group';
 $string['variantsselectionseed_help'] = 'Normally you can leave this box blank. If, however, you want two different questions in a quiz to use the same random seed, then type the same string in this box for the two questions (and deploy the same set of random seeds, if you are using deployed versions) and the random seeds for the two questions will be synchronised.';
 $string['verifyquestionandupdate'] = 'Verify the question text and update the form';
 $string['youmustconfirm'] = 'You must confirm here.';
-$string['editoroptions'] = 'Editor options';
-$string['editorwysiwyg'] = 'WYSIWYG editor';
-$string['editorwysiwyg_help'] = 'Enable or disable the WYSIWYG editor.';
-$string['mathinputmode'] = 'Math input mode';
-$string['mathinputmode_help'] = 'Controls which set of mathematical input buttons are to be displayed.';
-
-$string['modesimple'] = 'Simple';
-$string['modenormal'] = 'Normal';
-$string['modeadvanced'] = 'Advanced';
-$string['modenone'] = 'None';
-
-$string['enabled'] = 'Enabled';
-$string['disabled'] = 'Disabled';
 
 // Strings used by input elements.
 $string['booleangotunrecognisedvalue'] = 'Invalid input.';
@@ -372,6 +367,19 @@ $string['teacheranswershow_disp'] = 'A correct answer is {$a->display} .';
 $string['teacheranswershownotes'] = 'A correct answer is not provided for this input.';
 $string['teacheranswerempty']     = 'This input can be left blank.';
 
+// Strings used by editors
+$string['answerinvalid'] = 'This answer is invalid.';
+
+// WYSIWYG editor strings
+$string['editortypewysiwyg'] = 'WYSIWYG editor';
+$string['mathinputmodewysiwyg'] = 'Math input mode';
+$string['mathinputmodewysiwyg_help'] = 'Controls which set of mathematical input buttons are to be displayed.';
+$string['mathquilllatexdebugging']  = 'LaTeX from MathQuill: ';
+$string['convertedmaximadebugging'] = 'Converted Maximxa result: ';
+$string['modesimple'] = 'Simple';
+$string['modenormal'] = 'Normal';
+$string['modeadvanced'] = 'Advanced';
+$string['modenone'] = 'None';
 
 // Admin settings.
 $string['settingajaxvalidation'] = 'Instant validation';

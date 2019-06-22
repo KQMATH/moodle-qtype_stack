@@ -137,6 +137,8 @@ $options->readonly = true;
 $options->flags = question_display_options::HIDDEN;
 $options->suppressruntestslink = true;
 
+$headtags = question_engine::initialise_js() . $quba->render_question_head_html($slot);
+
 // Display the page.
 echo $OUTPUT->header();
 

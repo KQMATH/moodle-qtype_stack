@@ -1,14 +1,23 @@
+/**
+ * AMD module for a visual math input. This uses MathQuill.
+ *
+ * @package    qtype_stack
+ * @author     André Storhaug <andr3.storhaug@gmail.com>
+ * @copyright  2019 Norwegian University of Science and Technology (NTNU)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 define(['jquery', './mathquill'], function ($, MathQuill) {
 
     // When a control button is clicked, the input blurs.
     // This lets the control button know which input to act on.
-    let lastFocusedInput = null;
+    // let lastFocusedInput = null;
 
     class Input {
 
-        constructor(input, parent) {
+        constructor(input, parent, lastFocusedInput) {
             this.$input = $(input);
             this.$parent = $(parent);
+            this.lastFocusedInput = lastFocusedInput;
             let wrapper = document.createElement('div');
             this.wrapper = $(wrapper).addClass('visual-math-input-field');
             let MQ = MathQuill.getInterface(2);
@@ -21,8 +30,8 @@ define(['jquery', './mathquill'], function ($, MathQuill) {
                 }
             });
             this.$parent.append(wrapper);
-            this.onEdit = ($input, field) => $input.val('\\[ ' + field.latex() + ' \\]');
-            this.$textarea.on('blur', () => lastFocusedInput = this);
+            this.onEdit = ($input, field) => $input.val('\\[ ' + field.latex() + ' \\]'); // TODO FIX !! /[..../]
+            this.$textarea.on('blur', () => this.lastFocusedInput.input = this);
         }
 
         get $textarea() {
@@ -39,9 +48,26 @@ define(['jquery', './mathquill'], function ($, MathQuill) {
 
     }
 
+    class StaticInput {
+
+        constructor(input, parent) {
+            this.$input = $(input);
+            this.$parent = $(parent);
+            let wrapper = document.createElement('div');
+            this.wrapper = $(wrapper).addClass('visual-math-input-field');
+            let MQ = MathQuill.getInterface(2);
+            this.field = MQ.StaticMath(wrapper, {
+                spaceBehavesLikeTab: true,
+            });
+
+            this.$parent.append(wrapper);
+        }
+    }
+
     class Control {
 
-        constructor(name, text, onClick) {
+        constructor(name, text, onClick, lastFocusedInput) {
+            this.lastFocusedInput = lastFocusedInput;
             this.name = name;
             this.text = text;
             this.onClick = onClick;
@@ -58,9 +84,9 @@ define(['jquery', './mathquill'], function ($, MathQuill) {
             this.$element.addClass('visual-math-input-control btn btn-primary');
             this.$element.on('click', event => {
                 event.preventDefault();
-                if (lastFocusedInput !== null) {
-                    this.onClick(lastFocusedInput.field);
-                    lastFocusedInput.field.focus();
+                if (this.lastFocusedInput.input !== null) {
+                    this.onClick(this.lastFocusedInput.input.field);
+                    this.lastFocusedInput.input.field.focus();
                 }
             });
         }
@@ -69,15 +95,16 @@ define(['jquery', './mathquill'], function ($, MathQuill) {
 
     class ControlList {
 
-        constructor(wrapper) {
+        constructor(wrapper, lastFocusedInput) {
             this.controls = [];
+            this.lastFocusedInput = lastFocusedInput;
             this.$wrapper = $(wrapper);
-            this.$wrapper.addClass('visual-math-input-wrapper');
+            this.$wrapper.addClass('visualmathinputwrapper');
             this.defineDefault();
         }
 
         define(name, text, onClick) {
-            this.controls[name] = new Control(name, text, onClick);
+            this.controls[name] = new Control(name, text, onClick, this.lastFocusedInput);
         }
 
         enable(names) {
@@ -151,6 +178,7 @@ define(['jquery', './mathquill'], function ($, MathQuill) {
 
     return {
         Input: Input,
+        StaticInput: StaticInput,
         Control: Control,
         ControlList: ControlList
     };

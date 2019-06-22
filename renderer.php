@@ -21,9 +21,8 @@
  * @copyright 2012 The Open University
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-use qtype_stack\editor\editor_wysiwyg;
-require_once(__DIR__ . '/classes/editor/wysiwyg/editor_wysiwyg.php');
+error_reporting(E_ALL);
+ini_set('display_errors', 'on');
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -93,37 +92,37 @@ class qtype_stack_renderer extends qtype_renderer {
                 $question->questiontextformat,
                 $qa, 'question', 'questiontext', $question->id);
 
+
         // Initialise automatic validation, if enabled.
         if ($qaid && stack_utils::get_config()->ajaxvalidation) {
             $this->page->requires->js_call_amd('qtype_stack/input', 'initInputs',
                     [$inputstovaldiate, $qaid, $qa->get_field_prefix()]);
         }
 
+        // Prepare editor, if enabled.
+        $editorhtml = '';
+        if ($question->editor) {
+            $editor = $question->editor;
 
-        $wysiwygeditor = new editor_wysiwyg($questionid, $prefix, $response, $question->editoroptions);
-
-        foreach ($question->inputs as $name => $input) {
-            $wysiwygeditor->register_input($name, $input, $response);
+            if ($editor->is_used()) {
+                $editorhtml .= $editor->render($questionid);
+                $params = $editor->get_js_params_array($questionid, $prefix, $response);
+                $this->page->requires->js_call_amd('qtype_stack/editor-factory', 'initialize', $params);
+            }
         }
 
-
+        // Wrap up results.
         $result = '';
 
-        if ($wysiwygeditor->is_used() && $wysiwygeditor->is_enabled()) {
-            $result .= $wysiwygeditor->render();
-            $params = $wysiwygeditor->get_js_params_array();
-            $this->page->requires->js_call_amd('qtype_stack/wysiwyg-input', 'initialize', $params);
-        }
-
-        $result .= $this->question_tests_link($question, $options) . $questiontext;
+        $result .= $editorhtml;
+        $result .= $this->question_tests_link($question, $options);
+        $result .= $questiontext;
 
         if ($qa->get_state() == question_state::$invalid) {
             $result .= html_writer::nonempty_tag('div',
                 $question->get_validation_error($response),
                 array('class' => 'validationerror'));
         }
-
-        $result .= $wysiwygeditor->render_debug_info();
 
         return $result;
     }

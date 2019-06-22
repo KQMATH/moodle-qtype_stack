@@ -789,30 +789,6 @@ function xmldb_qtype_stack_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2018060102, 'qtype', 'stack');
     }
 
-    if ($oldversion < 2018102000) {
-
-        // Define new table qtype_stack_editor_options.
-        $table = new xmldb_table('qtype_stack_editor_options');
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('singlevars', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
-        $table->add_field('addtimessign', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
-        $table->add_field('mathinputmode', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, 'normal');
-
-        // Adding key to table qtype_stack_editor_options.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        $table->add_key('questionid', XMLDB_KEY_FOREIGN, array('questionid'));
-
-
-        // Conditionally launch create table for qtype_stack_editor_options.
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        }
-
-        // STACK savepoint reached.
-        upgrade_plugin_savepoint(true, 2018102000, 'qtype', 'stack');
-    }
-
     if ($oldversion < 2018120500) {
 
         // Changing nullability of field stackversion on table qtype_stack_options to null.
@@ -831,30 +807,27 @@ function xmldb_qtype_stack_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2018120500, 'qtype', 'stack');
     }
 
-    if ($oldversion < 2018122000) {
+    if ($oldversion < 2019062200) {
 
-        // Define field editorwysiwyg to be added to qtype_stack_editor_options.
-        $table = new xmldb_table('qtype_stack_editor_options');
-        $field = new xmldb_field('editorwysiwyg', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
-        $fieldold1 = new xmldb_field('singlevars');
-        $fieldold2 = new xmldb_field('addtimessign');
+        // Define new table qtype_stack_editor.
+        $table = new xmldb_table('qtype_stack_editor');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('type', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('options', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
 
-        // Conditionally launch add field editorwysiwyg.
-        if (!$dbman->field_exists($table, $field)) {
-            $dbman->add_field($table, $field);
-        }
+        // Adding key to table qtype_stack_editor.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('questionid', XMLDB_KEY_FOREIGN, array('questionid'));
 
-        // Conditionally launch drop field singlevars.
-        if ($dbman->field_exists($table, $fieldold1)) {
-            $dbman->drop_field($table, $fieldold1);
-        }
-        // Conditionally launch drop field addtimessign.
-        if ($dbman->field_exists($table, $fieldold2)) {
-            $dbman->drop_field($table, $fieldold2);
+
+        // Conditionally launch create table for qtype_stack_editor.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
         }
 
         // STACK savepoint reached.
-        upgrade_plugin_savepoint(true, 2018122000, 'qtype', 'stack');
+        upgrade_plugin_savepoint(true, 2019062200, 'qtype', 'stack');
     }
 
     // Add new upgrade blocks just above here.
