@@ -26,6 +26,8 @@ ini_set('display_errors', 'on');
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/stack/editor/editorbase.class.php');
+
 /**
  * Generates the output for Stack questions.
  *
@@ -99,22 +101,29 @@ class qtype_stack_renderer extends qtype_renderer {
                     [$inputstovaldiate, $qaid, $qa->get_field_prefix()]);
         }
 
-        // Prepare editor, if enabled.
-        $editorhtml = '';
-        if ($question->editor) {
-            $editor = $question->editor;
-
-            if ($editor->is_used()) {
-                $editorhtml .= $editor->render($questionid);
-                $params = $editor->get_js_params_array($questionid, $prefix, $response);
-                $this->page->requires->js_call_amd('qtype_stack/editor-factory', 'initialize', $params);
+        // Prepare editor data, if used.
+        $iseditorused = false;
+        $editorparams = array($questionid, $prefix);
+        $inputsoptions = array();
+        foreach ($question->inputs as $name => $input) {
+            if ($input->editor) {
+                $iseditorused = true;
+                $params = array(
+                    'editor' => $input->editor->get_editor_name(),
+                    'inputdata' => $input->editor->get_input_data($response),
+                    'editoroptions' => $input->editor->get_editor_options(),
+                );
+                array_push($inputsoptions, $params);
             }
+        }
+        array_push($editorparams, $inputsoptions, $CFG->debugdeveloper);
+
+        if ($iseditorused) {
+            $this->page->requires->js_call_amd('qtype_stack/editor-factory', 'initialize', $editorparams);
         }
 
         // Wrap up results.
         $result = '';
-
-        $result .= $editorhtml;
         $result .= $this->question_tests_link($question, $options);
         $result .= $questiontext;
 
@@ -131,10 +140,10 @@ class qtype_stack_renderer extends qtype_renderer {
     public function head_code(question_attempt $qa) {
         global $PAGE;
 
-        parent::head_code($qa);
-
-        $PAGE->requires->css('/question/type/stack/visualmathinput/mathquill.css');
-        $PAGE->requires->css('/question/type/stack/visualmathinput/visual-math-input.css');
+        if (stack_editor_factory::isEditorUsed($qa->get_question()->inputs)) {
+            $PAGE->requires->css('/question/type/stack/visualmathinput/mathquill.css');
+            $PAGE->requires->css('/question/type/stack/visualmathinput/visual-math-input.css');
+        }
     }
 
 

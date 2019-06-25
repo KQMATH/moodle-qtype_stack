@@ -39,15 +39,15 @@ class stack_editor_factory {
      * Create an editor of a given type and return it.
      * @param string $type the required type. Must be one of the values retured by
      *      {@link get_available_types()}.
-     * @param $inputs Stack inputs
+     * @param $input Stack input
      * @param string $options optional editor options as a JSON string
      * @param bool $runtime whether the editor is being used at run-time or just constructed elswhere.
      * @return stack_editor the requested editor.
      */
-    public static function make($type, $inputs, $options = null, $runtime = true) {
+    public static function make($type, $input, $options = null, $runtime = true) {
         $class = self::class_for_type($type);
 
-        return new $class($inputs, $options, $runtime);
+        return new $class($input, $options, $runtime);
     }
 
     /**
@@ -136,14 +136,14 @@ class stack_editor_factory {
     /**
      * Add all the editor's options fields to the MoodleForm.
      * @param MoodleQuickForm $mform the form to add elements to.
-     * @param stack_editor $editortype the editor type
+     * @param string $editortype the editor type
      */
-    public static function add_options_to_moodleform(MoodleQuickForm $mform, $editortype) {
+    public static function add_options_to_moodleform(MoodleQuickForm $mform, $editortype, $inputname) {
         $class = "stack_{$editortype}_editor";
         if (!class_exists($class)) {
             return;
         }
-        $class::add_options_to_moodleform($mform, $editortype);
+        $class::add_options_to_moodleform($mform, $editortype, $inputname);
     }
 
     /**
@@ -174,5 +174,19 @@ class stack_editor_factory {
             self::$optionsdefaults[$type] = $class::get_default_options();
         }
         return self::$optionsdefaults;
+    }
+
+    /**
+     * Check if an editor is used in at least one input. This is used in {@see qtype_stack_renderer::head_code()}.
+     * @param array $inputs STACK inputs to check for editor usage.
+     * @return bool true if the
+     */
+    public static function isEditorUsed($inputs) {
+        foreach ($inputs as $name => $input) {
+            if ($input->editor) {
+                return true;
+            }
+        }
+        return false;
     }
 }

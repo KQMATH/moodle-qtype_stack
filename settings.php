@@ -183,6 +183,11 @@ $settings->add(new admin_setting_configselect('qtype_stack/inputshowvalidation',
         get_string('showvalidation_help', 'qtype_stack'), '1',
         stack_options::get_showvalidation_options()));
 
+$settings->add(new qtype_stack_admin_setting_editor_types('qtype_stack/editortype',
+    get_string('editortype', 'qtype_stack'),
+    get_string('editortype_help', 'qtype_stack'), 'algebraic', null));
+
+// TODO add configs for editor settings
 
 // Options for new questions.
 $settings->add(new admin_setting_heading('questionoptionsheading',
@@ -240,14 +245,3 @@ $settings->add(new admin_setting_configselect('qtype_stack/matrixparens',
         get_string('matrixparens', 'qtype_stack'),
         get_string('matrixparens_help', 'qtype_stack'), '[',
         stack_options::get_matrix_parens_options()));
-
-// Options for stack editors.
-$settings->add(new admin_setting_heading('editoroptionsheading',
-        get_string('settinginput_options_heading', 'qtype_stack'),
-        get_string('settinginput_options_heading_desc', 'qtype_stack')));
-
-$settings->add(new qtype_stack_admin_setting_editor_types('qtype_stack/editortype',
-        get_string('editortype', 'qtype_stack'),
-        get_string('editortype_help', 'qtype_stack'), 'algebraic', null));
-
-// TODO add configs for editor settings

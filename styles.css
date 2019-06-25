@@ -80,8 +80,11 @@ body.pagelayout-embedded .que.stack .formulation .questiontestslink {
 
 /* Styles for stack editors */
 .que.stack .visualmathinputwrapper {
-    margin: -12px -20px 20px -20px;
     background-color: #1177d1;
+}
+
+.que.stack .wysiwyg {
+    display: inline-block;
 }
 
 /* Styles for stack editors debugging */

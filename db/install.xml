@@ -34,18 +34,6 @@
         <KEY NAME="questionid" TYPE="foreign-unique" FIELDS="questionid" REFTABLE="question" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="qtype_stack_editor" COMMENT="Stores the editor options for each question">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key link to question.id"/>
-        <FIELD NAME="type" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="The type of editor this is."/>
-        <FIELD NAME="options" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Editor options that are interpreted in an editor-specific way. Stored in JSON format."/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="questionid" TYPE="foreign" FIELDS="questionid" REFTABLE="question" REFFIELDS="id"/>
-      </KEYS>
-    </TABLE>
     <TABLE NAME="qtype_stack_inputs" COMMENT="One row for each input in the question.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
@@ -74,6 +62,20 @@
       <INDEXES>
         <INDEX NAME="questionid-name" UNIQUE="true" FIELDS="questionid, name"/>
       </INDEXES>
+    </TABLE>
+    <TABLE NAME="qtype_stack_input_editor" COMMENT="Stores the editor options for each input in the question">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="inputid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key link to input.id"/>
+        <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key link to question.id"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="The type of editor this is."/>
+        <FIELD NAME="options" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Editor options that are interpreted in an editor-specific way. Stored in JSON format."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="inputid" TYPE="foreign" FIELDS="inputid" REFTABLE="qtype_stack_inputs" REFFIELDS="id"/>
+        <KEY NAME="questionid" TYPE="foreign" FIELDS="questionid" REFTABLE="question" REFFIELDS="id"/>
+      </KEYS>
     </TABLE>
     <TABLE NAME="qtype_stack_prts" COMMENT="One row for each PRT in the question.">
       <FIELDS>

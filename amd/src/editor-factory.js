@@ -24,15 +24,19 @@
 define(['jquery', 'qtype_stack/wysiwyg-editor'], function($, WYSIWYG) {
 
     return {
-        initialize: function(editor, questionid, prefix, inputs, editorOptions, debug) {
-            if (!inputs.length > 0) {
+        initialize: function(questionid, prefix, inputsdata, debug) {
+            if (!inputsdata.length > 0) {
                 return false;
             }
 
-            if (editor === 'wysiwyg') {
-                new WYSIWYG(questionid, prefix, inputs, editorOptions, debug);
-                return true;
-            }
+            Object.keys(inputsdata).forEach(function(input) {
+
+                if (inputsdata[input].editor === 'wysiwyg') {
+                    new WYSIWYG(questionid, prefix, inputsdata[input].inputdata, inputsdata[input].editoroptions, debug);
+                    return true;
+                }
+
+            });
             return false;
         },
     };

@@ -89,10 +89,10 @@ $string['branchfeedback_help'] = 'This is CASText which may depend on any of the
 
 $string['editoroptions'] = 'Editor options';
 $string['editortype'] = 'Editor type';
-$string['editortype_help'] = 'Select an editor type to use for this question.';
-$string['editortypenotsupported'] = 'Editor type \'{$a}\' is not supported by any of the selected input types.';
-$string['editorchangemaydeletedata'] = 'You are changing the editor used in this question. If you save the question now, this may result in loss of data specific to the \'{$a}\' editor. Please confirm that you want to do this. Alternatively reselect the \'{$a}\' editor from the editor list.';
-$string['editorrchangedconfirm'] = 'I confirm that I want to change the editor used in this question.';
+$string['editortype_help'] = 'Select an editor type to use for this input.';
+$string['editortypenotsupported'] = 'Editor type \'{$a}\' is not supported by the selected input type.';
+$string['editorchangemaydeletedata'] = 'You are changing the editor used for this input. If you save the question now, this may result in loss of data specific to the \'{$a}\' editor. Please confirm that you want to do this. Alternatively reselect the \'{$a}\' editor from the editor list.';
+$string['editorrchangedconfirm'] = 'I confirm that I want to change the editor used for this input.';
 
 $string['inputtest'] = 'Input test';
 $string['inversetrig'] = 'Inverse trigonometric functions';
@@ -425,12 +425,6 @@ $string['settingmaximalibraries'] = 'Load optional Maxima libraries:';
 $string['settingmaximalibraries_desc'] = 'This is a comma separated list of Maxima library names which will be automatically loaded into Maxima.  Only supported library names can be used: "stats, distrib, descriptive, simplex". These libraries will not be loaded if you have saved a maxima image to optimise performance.';
 $string['settingmaximalibraries_error'] = 'The following package is not supported: {$a}';
 $string['settingmaximalibraries_failed'] = 'It appears as if some of the Maxima packages you have asked for have failed to load.  Please refer to the installation instructions for notes about this error.';
-$string['settinginput_options_heading'] = 'Default visual math editor input options';
-$string['settinginput_options_heading_desc'] = 'Used when creating a new question, or adding a new input to an existing question.';
-$string['settingeditorwysiwyg'] = 'WYSIWYG editor';
-$string['settingeditorwysiwyg_desc'] = 'Enable or disable the WYSIWYG editor.';
-$string['settingmath_input_mode'] = 'Math input mode';
-$string['settingmath_input_mode_desc'] = 'Controls which set of mathematical input buttons are to be displayed.';
 
 // Strings used by replace dollars script.
 $string['replacedollarscount'] = 'This category contains {$a} STACK questions.';

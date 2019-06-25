@@ -318,9 +318,6 @@ class qtype_stack_edit_form extends question_edit_form {
         // Hints.
         $this->add_interactive_settings();
 
-        // Editor options
-        $this->definition_editor($mform);
-
         // Replace standard penalty input at the bottom with the one we want.
         $mform->removeElement('multitriesheader');
         $mform->removeElement('penalty');
@@ -331,36 +328,6 @@ class qtype_stack_edit_form extends question_edit_form {
         $mform->addHelpButton('penalty', 'penalty', 'qtype_stack');
         $mform->setDefault('penalty', 0.1000000);
         $mform->addRule('penalty', null, 'required', null, 'client');
-    }
-
-    /**
-     * Add the form elements for the question editor.
-     * @param MoodleQuickForm $mform the form being assembled.
-     */
-    protected function definition_editor(MoodleQuickForm $mform) {
-        $mform->addElement('header', 'editoroptionsheader', stack_string('editoroptions'));
-
-        $editortype = isset($this->question->editor->type) ? $this->question->editor->type : 'none';
-        $mform->addElement('hidden', 'originaleditor', $editortype);
-        $mform->setType('originaleditor', PARAM_RAW);
-
-        $submitted = optional_param('editortype', null, PARAM_RAW);
-        if (isset($submitted) && $submitted !== $editortype && $editortype !== 'none') {
-            $mform->addElement('static', 'editorwarning', '', stack_string('editorchangemaydeletedata', $editortype));
-            $mform->addElement('advcheckbox', 'editordeleteconfirm', '', stack_string('editorrchangedconfirm'));
-            $mform->setDefault('editordeleteconfirm', 0);
-            $mform->setExpanded('editoroptionsheader');
-        }
-
-        $mform->addElement('select', 'editortype', stack_string('editortype'), $this->editortypechoices);
-        $mform->setDefault('editortype', $this->stackconfig->editortype);
-        $mform->addHelpButton('editortype', 'editortype', 'qtype_stack');
-
-        // Add all editor options.
-        $editorsoptions = stack_editor_factory::get_options_used();
-        foreach ($editorsoptions as $editor => $options) {
-            stack_editor_factory::add_options_to_moodleform($mform, $editor);
-        }
     }
 
     /**
@@ -454,6 +421,39 @@ class qtype_stack_edit_form extends question_edit_form {
         $mform->addElement('text', $inputname . 'options', stack_string('inputextraoptions'), array('size' => 20));
         $mform->setType($inputname . 'options', PARAM_RAW);
         $mform->addHelpButton($inputname . 'options', 'inputextraoptions', 'qtype_stack');
+
+        // Editor options
+        $this->definition_editor($mform, $inputname);
+    }
+
+    /**
+     * Add the form elements for the question editor.
+     * @param MoodleQuickForm $mform the form being assembled.
+     */
+    protected function definition_editor(MoodleQuickForm $mform, $inputname) {
+        $mform->addElement('html', '<hr>');
+
+        $editortype = isset($this->question->inputs[$inputname]->editor->type) ? $this->question->inputs[$inputname]->editor->type : 'none';
+        $mform->addElement('hidden', $inputname . 'originaleditor', $editortype);
+        $mform->setType($inputname . 'originaleditor', PARAM_RAW);
+
+        $submitted = optional_param($inputname . 'editortype', null, PARAM_RAW);
+        if (isset($submitted) && $submitted !== $editortype && $editortype !== 'none') {
+            $mform->addElement('static', $inputname . 'editorwarning', '', stack_string('editorchangemaydeletedata', $editortype));
+            $mform->addElement('advcheckbox', $inputname . 'editordeleteconfirm', '', stack_string('editorrchangedconfirm'));
+            $mform->setDefault($inputname . 'editordeleteconfirm', 0);
+            $mform->setExpanded($inputname . 'header');
+        }
+
+        $mform->addElement('select', $inputname . 'editortype', stack_string('editortype'), $this->editortypechoices);
+        $mform->setDefault($inputname . 'editortype', $this->stackconfig->editortype);
+        $mform->addHelpButton($inputname . 'editortype', 'editortype', 'qtype_stack');
+
+        // Add all editor options.
+        $editorsoptions = stack_editor_factory::get_options_used();
+        foreach ($editorsoptions as $editor => $options) {
+            stack_editor_factory::add_options_to_moodleform($mform, $editor, $inputname);
+        }
     }
 
     /**
@@ -595,7 +595,6 @@ class qtype_stack_edit_form extends question_edit_form {
     public function data_preprocessing($question) {
         $question = parent::data_preprocessing($question);
         $question = $this->data_preprocessing_options($question);
-        $question = $this->data_preprocessing_editor_options($question);
         $question = $this->data_preprocessing_inputs($question);
         $question = $this->data_preprocessing_prts($question);
         $question = $this->data_preprocessing_hints($question);
@@ -644,30 +643,6 @@ class qtype_stack_edit_form extends question_edit_form {
     }
 
     /**
-     * Do the bit of {@link data_preprocessing()} for the data in the qtype_stack_editor table.
-     * @param object $question the raw data.
-     * @return object the updated $question updated object closer to being ready to send to the form.
-     */
-    protected function data_preprocessing_editor_options($question) {
-        if (!isset($question->editor)) {
-            return $question;
-        }
-
-        if (isset($question->editor->type)) {
-            $question->editortype = $question->editor->type;
-
-            $options = json_decode($question->editor->options, true);
-            foreach ($options as $name => $option) {
-                $question->{$question->editor->type . $name} = $option;
-            }
-        } else {
-            $question->editortype = 'none';
-        }
-
-        return $question;
-    }
-
-    /**
      * Do the bit of {@link data_preprocessing()} for the data in the qtype_stack_inputs table.
      * @param object $question the raw data.
      * @return object the updated $question updated object closer to being ready to send to the form.
@@ -693,6 +668,32 @@ class qtype_stack_edit_form extends question_edit_form {
             $question->{$inputname . 'mustverify'}         = $input->mustverify;
             $question->{$inputname . 'showvalidation'}     = $input->showvalidation;
             $question->{$inputname . 'options'}            = $input->options;
+
+            $question = $this->data_preprocessing_editor_options($question, $inputname, $input);
+        }
+
+        return $question;
+    }
+
+    /**
+     * Do the bit of {@link data_preprocessing()} for the data in the qtype_stack_input_editor table.
+     * @param object $question the raw data.
+     * @return object the updated $question updated object closer to being ready to send to the form.
+     */
+    protected function data_preprocessing_editor_options($question, $inputname, $input) {
+        if (!isset($input->editor)) {
+            return $question;
+        }
+
+        if (isset($input->editor->type)) {
+            $question->{$inputname . 'editortype'} = $input->editor->type;
+
+            $options = json_decode($input->editor->options, true);
+            foreach ($options as $name => $option) {
+                $question->{$inputname . $input->editor->type . $name} = $option;
+            }
+        } else {
+            $question->{$inputname . 'editortype'} = 'none';
         }
 
         return $question;

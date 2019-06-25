@@ -23,6 +23,9 @@ require_once(__DIR__ . '/../cas/casstring.class.php');
 /**
  * The base class for editors in STACK.
  *
+ * Editors provides students with an enhanced method to write their response.
+ * An editor is associated with one, and only one, STACK input.
+ *
  * @package    qtype_stack
  * @author     André Storhaug <andr3.storhaug@gmail.com>
  * @copyright  2019 Norwegian University of Science and Technology (NTNU)
@@ -30,30 +33,42 @@ require_once(__DIR__ . '/../cas/casstring.class.php');
  */
 abstract class stack_editor {
 
-    protected $inputs = array();
+    /**
+     * The STACK input this editor controls.
+     * @var stack_input the STACK input this editor controls.
+     */
+    protected $input;
+
+    /**
+     * Array with the options for this editor.
+     * @var array $editoroptions the options for this editor.
+     */
     protected $editoroptions;
+
+    /**
+     * Decide if the editor is being used at run-time or just constructed elswhere.
+     * @var bool $runtime
+     */
     protected $runtime;
 
     /**
      * Constructor
      *
-     * @param $inputs Stack inputs
+     * @param $input Stack input
      * @param null $options The options for this editor. Encoded as a JSON string.
      * @param bool $runtime This decides if we are at runtime (true) or in edit mode.
      */
-    public function __construct($inputs, $options = null, $runtime = true) {
+    public function __construct($input, $options = null, $runtime = true) {
         $this->runtime = $runtime;
         $class = get_class($this);
         $this->editoroptions = $class::get_default_options();
 
-        if (null === $inputs || !is_array($inputs)) {
-            throw new stack_exception('stack_editor: __construct: 3rd argumenr, $inputs, ' .
-                'must be an array of options and not null.');
+        if (null === $input) {
+            throw new stack_exception('stack_editor: __construct: 1rd argumenr, $input, ' .
+                'must not be null.');
         }
-        foreach ($inputs as $name => $input) {
-            if ($this->is_input_supported($input)) {
-                $this->inputs[$name] = $input;
-            }
+        if ($this->is_input_supported($input)) {
+            $this->input = $input;
         }
 
         if (null !== $options) {
@@ -110,7 +125,7 @@ abstract class stack_editor {
      * @param MoodleQuickForm $mform the form to add elements to.
      * @param stack_editor $editortype the editor type
      */
-    public abstract static function add_options_to_moodleform(MoodleQuickForm $mform, $editortype);
+    public abstract static function add_options_to_moodleform(MoodleQuickForm $mform, $editortype, $inputname);
 
     /**
      * Return the default values for the editor options.
@@ -121,56 +136,17 @@ abstract class stack_editor {
     }
 
     /**
-     * Returns the XHTML for embedding this editor in a page.
-     *
-     * @param string $questionid the id of the question.
-     * @return string HTML for this editor.
-     */
-    abstract public function render($questionid);
-
-    public function is_used() {
-        $isused = false;
-        if (sizeof($this->inputs) > 0) {
-            $isused = true;
-        }
-
-        return $isused;
-    }
-
-    /**
-     * Get the parameters to be sent to the AMD JavaScript editor module.
-     *
-     * @param string $questionid the question id.
-     * @param string $prefix the question prefix.
-     * @param $response the question response
-     * @return array returns an array of the required js parameters.
-     */
-    public function get_js_params_array($questionid, $prefix, $response) {
-        global $CFG;
-
-        $params = array(
-            "editor" => $this->get_editor_name(),
-            $questionid,
-            $prefix,
-            $this->get_input_options($response),
-            $this->get_editor_options(),
-            $CFG->debugdeveloper,
-        );
-        return $params;
-    }
-
-    /**
-     * Get the relevant input options.
+     * Get the relevant input data.
      * @param $response the question responce.
      * @return array returns an array of the relevant input options.
      */
-    abstract protected function get_input_options($response);
+    abstract public function get_input_data($response);
 
     /**
      * Get this editor options.
      * @return array this editor options.
      */
-    protected function get_editor_options() {
+    public function get_editor_options() {
         return $this->editoroptions;
     }
 }

@@ -148,17 +148,6 @@ class qtype_stack extends question_type {
         $options->variantsselectionseed     = $fromform->variantsselectionseed;
         $DB->update_record('qtype_stack_options', $options);
 
-        $editor = $DB->get_record('qtype_stack_editor', array('questionid' => $fromform->id));
-        if ($editor && $fromform->editortype === 'none') {
-            $DB->delete_records('qtype_stack_editor', array('id' => $editor->id));
-
-        } elseif (!$editor && $fromform->editortype !== 'none') {
-            $editor = new stdClass();
-            $editor->questionid = $fromform->id;
-            $editor->type = '';
-            $editor->options = '';
-            $editor->id = $DB->insert_record('qtype_stack_editor', $editor);
-        }
 
         if ($editor && $fromform->editortype !== 'none') {
             $editoroptions = [];
@@ -172,7 +161,6 @@ class qtype_stack extends question_type {
                 $editor->id = $DB->update_record('qtype_stack_editor', $editor);
             }
         }
-
 
         $inputnames = array_keys($this->get_input_names_from_question_text_lang($fromform->questiontext));
         $inputs = $DB->get_records('qtype_stack_inputs',
@@ -208,6 +196,33 @@ class qtype_stack extends question_type {
 
             $questionhasinputs = true;
             $DB->update_record('qtype_stack_inputs', $input);
+
+
+            $editor = $DB->get_record('qtype_stack_input_editor', array('inputid' => $input->id, 'questionid' => $fromform->id));
+            if ($editor && $fromform->{$inputname . 'editortype'} === 'none') {
+                $DB->delete_records('qtype_stack_input_editor', array('id' => $editor->id));
+
+            } elseif (!$editor && $fromform->{$inputname . 'editortype'} !== 'none') {
+                $editor = new stdClass();
+                $editor->inputid = $input->id;
+                $editor->questionid = $fromform->id;
+                $editor->type = '';
+                $editor->options = '';
+                $editor->id = $DB->insert_record('qtype_stack_input_editor', $editor);
+            }
+
+            if ($editor && $fromform->{$inputname . 'editortype'} !== 'none') {
+                $editoroptions = [];
+                $usededitorsoptions = stack_editor_factory::get_options_used();
+                if (isset($usededitorsoptions[$fromform->{$inputname . 'editortype'}])) {
+                    $editor->type = $fromform->{$inputname . 'editortype'};
+                    foreach ($usededitorsoptions[$editor->type] as $option) {
+                        $editoroptions[$option] = $fromform->{$inputname . $editor->type . $option};
+                    }
+                    $editor->options = json_encode($editoroptions);
+                    $editor->id = $DB->update_record('qtype_stack_input_editor', $editor);
+                }
+            }
         }
 
         if ($inputs) {
@@ -397,14 +412,16 @@ class qtype_stack extends question_type {
         $question->options = $DB->get_record('qtype_stack_options',
                 array('questionid' => $question->id), '*', MUST_EXIST);
 
-        $question->editor = $DB->get_record('qtype_stack_editor',
-                array('questionid' => $question->id), '*');
-
         $question->inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $question->id), 'name',
                 'name, id, questionid, type, tans, boxsize, strictsyntax, insertstars, ' .
                 'syntaxhint, syntaxattribute, forbidwords, allowwords, forbidfloat, requirelowestterms, ' .
                 'checkanswertype, mustverify, showvalidation, options');
+
+        foreach ($question->inputs as $name => $input) {
+            $question->inputs[$name]->editor = $DB->get_record('qtype_stack_input_editor',
+                array('inputid' => $input->id), '*');
+        }
 
         $question->prts = $DB->get_records('qtype_stack_prts',
                 array('questionid' => $question->id), 'name',
@@ -482,6 +499,12 @@ class qtype_stack extends question_type {
             }
             $question->inputs[$name] = stack_input_factory::make(
                     $inputdata->type, $inputdata->name, $inputdata->tans, $question->options, $parameters);
+
+            if (isset($inputdata->editor->type)) {
+                $question->inputs[$name]->editor = stack_editor_factory::make($inputdata->editor->type, $question->inputs[$name], $inputdata->editor->options);
+            } else {
+                $question->inputs[$name]->editor = null;
+            }
         }
 
         $totalvalue = 0;
@@ -540,12 +563,6 @@ class qtype_stack extends question_type {
                     $feedbackvariables, $nodes, $prtdata->firstnodename);
         }
 
-        if (isset($questiondata->editor->type)) {
-            $question->editor = stack_editor_factory::make($questiondata->editor->type, $question->inputs, $questiondata->editor->options);
-        } else {
-            $question->editor = null;
-        }
-
         $question->deployedseeds = array_values($questiondata->deployedseeds);
     }
 
@@ -557,7 +574,7 @@ class qtype_stack extends question_type {
         $DB->delete_records('qtype_stack_prts',           array('questionid' => $questionid));
         $DB->delete_records('qtype_stack_inputs',         array('questionid' => $questionid));
         $DB->delete_records('qtype_stack_options',        array('questionid' => $questionid));
-        $DB->delete_records('qtype_stack_editor',         array('questionid' => $questionid));
+        $DB->delete_records('qtype_stack_input_editor',   array('questionid' => $questionid));
         parent::delete_question($questionid, $contextid);
     }
 
@@ -1056,11 +1073,6 @@ class qtype_stack extends question_type {
         $output .= "    <matrixparens>{$options->matrixparens}</matrixparens>\n";
         $output .= "    <variantsselectionseed>{$format->xml_escape($options->variantsselectionseed)}</variantsselectionseed>\n";
 
-        if (isset($questiondata->editor->type)) {
-            $output .= "    <editortype>{$questiondata->editor->type}</editortype>\n";
-            $output .= "    <editoroptions>{$questiondata->editor->options}</editoroptions>\n";
-        }
-
         foreach ($questiondata->inputs as $input) {
             $output .= "    <input>\n";
             $output .= "      <name>{$input->name}</name>\n";
@@ -1079,6 +1091,12 @@ class qtype_stack extends question_type {
             $output .= "      <mustverify>{$input->mustverify}</mustverify>\n";
             $output .= "      <showvalidation>{$input->showvalidation}</showvalidation>\n";
             $output .= "      <options>{$input->options}</options>\n";
+
+            if (isset($input->editor->type)) {
+                $output .= "      <editortype>{$input->editor->type}</editortype>\n";
+                $output .= "      <editoroptions>{$input->editor->options}</editoroptions>\n";
+            }
+
             $output .= "    </input>\n";
         }
 
@@ -1198,8 +1216,6 @@ class qtype_stack extends question_type {
         $format->import_hints($fromform, $xml, false, false,
                 $format->get_format($fromform->questiontextformat));
 
-        $this->import_xml_editor($xml, $fromform, $format);
-
         if (isset($xml['#']['deployedseed'])) {
             $fromform->deployedseeds = array();
             foreach ($xml['#']['deployedseed'] as $seedxml) {
@@ -1223,16 +1239,17 @@ class qtype_stack extends question_type {
      * @param array $xml the XML to extract the data from.
      * @param object $fromform the data structure we are building from the XML.
      * @param qformat_xml $format the importer/exporter object.
+     * @param string $name the name of the input {@link stack_input}
      */
-    protected function import_xml_editor($xml, $fromform, $format) {
+    protected function import_xml_editor($xml, $fromform, $format, $name) {
         $editortype = $format->getpath($xml, array('#', 'editortype', 0, '#'), 'none');
-        $fromform->editortype = $editortype;
+        $fromform->{$name . 'editortype'} = $editortype;
 
         $options = $format->getpath($xml, array('#', 'editoroptions', 0, '#'), null);
         if (isset($options)) {
             $options = json_decode($options, true);
-            foreach ($options as $name => $option) {
-                $fromform->{$editortype . $name} = $option;
+            foreach ($options as $optionname => $option) {
+                $fromform->{$name . $editortype . $optionname} = $option;
             }
         }
     }
@@ -1279,6 +1296,7 @@ class qtype_stack extends question_type {
         $fromform->{$name . 'mustverify'}         = $format->getpath($xml, array('#', 'mustverify', 0, '#'), 1);
         $fromform->{$name . 'showvalidation'}     = $format->getpath($xml, array('#', 'showvalidation', 0, '#'), 1);
         $fromform->{$name . 'options'}            = $format->getpath($xml, array('#', 'options', 0, '#'), '');
+        $this->import_xml_editor($xml, $fromform, $format, $name);
     }
 
     /**
@@ -1615,35 +1633,39 @@ class qtype_stack extends question_type {
         }
 
         // 5) Validate editor selection.
-        if ($fromform['editortype'] !== 'none') {
-            $issupported = false;
-            foreach ($inputs as $inputname => $counts) {
-                $inputtype = $fromform[$inputname . 'type'];
-                $stackinput = $stackinputfactory->make($inputtype, $inputname,
-                    $fromform[$inputname . 'modelans'], null, null, false);
+        foreach ($inputs as $inputname => $counts) {
+            $inputtype = $fromform[$inputname . 'type'];
+            $editortype = $fromform[$inputname . 'editortype'];
+            $stackinput = $stackinputfactory->make($inputtype, $inputname, $fromform[$inputname . 'modelans'], null, null, false);
+
+            if ($editortype !== 'none') {
+                $issupported = false;
 
                 $supportededitors = $stackinput::get_supported_editors();
                 foreach ($supportededitors as $editor => $supported) {
-                    if ($fromform['editortype'] === $editor && $supported) {
+                    if ($editortype === $editor && $supported) {
                         $issupported = true;
                         break;
                     }
                 }
+
+                if (!$issupported) {
+                    $errors[$inputname . 'editortype'][] = stack_string('editortypenotsupported', $editortype);
+                }
+
+                // TODO validate all editor options..
             }
-            if (!$issupported) {
-                $errors['editortype'][] = stack_string('editortypenotsupported', $fromform['editortype']);
-            }
 
-            // TODO validate editor options.. Make own function in editorbase class?
-        }
+            $originaleditor = $fromform[$inputname . 'originaleditor'];
 
-        if ($fromform['editortype'] !== $fromform['originaleditor']) {
 
-            if ($fromform['editortype'] === 'none' && !$fromform['editordeleteconfirm']) {
-                $errors['editordeleteconfirm'][] = stack_string('youmustconfirm');
+            if ($editortype !== $originaleditor) {
+                if ($editortype === 'none' && !$fromform[$inputname . 'editordeleteconfirm']) {
+                    $errors[$inputname . 'editordeleteconfirm'][] = stack_string('youmustconfirm');
 
-            } elseif($fromform['originaleditor'] !== 'none' && !$fromform['editordeleteconfirm']) {
-                $errors['editordeleteconfirm'][] = stack_string('youmustconfirm');
+                } elseif ($fromform[$inputname . 'originaleditor'] !== 'none' && !$fromform[$inputname . 'editordeleteconfirm']) {
+                    $errors[$inputname . 'editordeleteconfirm'][] = stack_string('youmustconfirm');
+                }
             }
         }
 

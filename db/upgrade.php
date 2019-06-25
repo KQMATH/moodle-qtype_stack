@@ -807,27 +807,30 @@ function xmldb_qtype_stack_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2018120500, 'qtype', 'stack');
     }
 
-    if ($oldversion < 2019062200) {
+    if ($oldversion < 2019062400) {
 
-        // Define new table qtype_stack_editor.
-        $table = new xmldb_table('qtype_stack_editor');
+        // Define new table qtype_stack_input_editor.
+        $table = new xmldb_table('qtype_stack_input_editor');
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('inputid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
         $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
         $table->add_field('type', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
         $table->add_field('options', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
 
-        // Adding key to table qtype_stack_editor.
+        // Adding key to table qtype_stack_input_editor.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        $table->add_key('questionid', XMLDB_KEY_FOREIGN, array('questionid'));
+        $table->add_key('inputid', XMLDB_KEY_FOREIGN, array('inputid'), 'qtype_stack_inputs', array('id'));
+        $table->add_key('questionid', XMLDB_KEY_FOREIGN, array('questionid'), 'question', array('id'));
 
 
-        // Conditionally launch create table for qtype_stack_editor.
+
+        // Conditionally launch create table for qtype_stack_input_editor.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
         }
 
         // STACK savepoint reached.
-        upgrade_plugin_savepoint(true, 2019062200, 'qtype', 'stack');
+        upgrade_plugin_savepoint(true, 2019062400, 'qtype', 'stack');
     }
 
     // Add new upgrade blocks just above here.

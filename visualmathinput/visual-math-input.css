@@ -3,7 +3,7 @@
     border: 1px solid #bbb;
     min-height: 32px;
     max-width: 100%;
-    min-width: unset;
+    min-width: 100%;
     padding: 8px;
 }
 
@@ -13,7 +13,7 @@
         border: 1px solid #bbb;
         min-width: 320px;
         min-height: 32px;
-        width: unset;
+        width: 100%;
         max-width: 100%;
         padding: 8px;
     }
@@ -21,7 +21,7 @@
 
 .visual-math-input-controls {
     width: 90%;
-    margin-bottom: 2px; 
+    margin-bottom: 2px;
 }
 
 .visual-math-input-control {

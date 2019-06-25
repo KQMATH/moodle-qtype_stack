@@ -26,13 +26,13 @@ defined('MOODLE_INTERNAL') || die();
  */
 class stack_wysiwyg_editor extends stack_editor {
 
-    public static function add_options_to_moodleform(MoodleQuickForm $mform, $editortype) {
+    public static function add_options_to_moodleform(MoodleQuickForm $mform, $editortype, $inputname) {
         $defaultoptions = self::get_default_options();
 
-        $mform->addElement('select', $editortype . 'mathinputmode', stack_string('mathinputmode' . $editortype), self::get_math_input_mode_options());
-        $mform->setDefault($editortype . 'mathinputmode', $defaultoptions['mathinputmode']);
-        $mform->hideif($editortype . 'mathinputmode', 'editortype', 'neq', $editortype);
-        $mform->addHelpButton($editortype . 'mathinputmode', 'mathinputmode' . $editortype, 'qtype_stack');
+        $mform->addElement('select', $inputname . $editortype . 'mathinputmode', stack_string('mathinputmode' . $editortype), self::get_math_input_mode_options());
+        $mform->setDefault($inputname, $editortype . 'mathinputmode', $defaultoptions['mathinputmode']);
+        $mform->hideif($inputname . $editortype . 'mathinputmode', $inputname . 'editortype', 'neq', $editortype);
+        $mform->addHelpButton($inputname . $editortype . 'mathinputmode', 'mathinputmode' . $editortype, 'qtype_stack');
     }
 
     public static function get_default_options() {
@@ -53,33 +53,24 @@ class stack_wysiwyg_editor extends stack_editor {
         );
     }
 
-    public function render($questionid) {
-        $result = html_writer::div('', '', ['id' => $questionid . 'controls_wrapper']);
-        return $result;
-    }
-
     public function get_editor_name() {
         return 'wysiwyg';
     }
 
-    protected function get_input_options($response) {
-        $options = [];
-        foreach ($this->inputs as $name => $input) {
-
-            // Set initial question value to "" if no responses exists.
-            if (isset($response[$name . '_latex'])) {
-                $latexresponse = $response[$name . '_latex'];
-            } else {
-                $latexresponse = "";
-            }
-
-            array_push($options, array(
-                "input" => $name,
-                "latexresponse" => $latexresponse,
-                "inputoptions" => array(
-                    "insertStars" => $input->get_parameter('insertStars', 0)
-                )));
+    public function get_input_data($response) {
+        // Set initial question value to "" if no responses exists.
+        if (isset($response[$this->input->get_name() . '_latex'])) {
+            $latexresponse = $response[$this->input->get_name() . '_latex'];
+        } else {
+            $latexresponse = "";
         }
+
+        $options = array(
+            "input" => $this->input->get_name(),
+            "latexresponse" => $latexresponse,
+            "inputoptions" => array(
+                "insertStars" => $this->input->get_parameter('insertStars', 0)
+            ));
         return $options;
     }
 }

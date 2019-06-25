@@ -1183,6 +1183,14 @@ abstract class stack_input {
         return array($this->name => $in);
     }
 
+    /**
+     * Get the name of this input.
+     * @return string the name of this input
+     */
+    public function get_name() {
+        return $this->name;
+    }
+
     /*
      * Return the value of any errors.
      */

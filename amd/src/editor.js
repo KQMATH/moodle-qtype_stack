@@ -33,25 +33,29 @@ define(['jquery', 'qtype_stack/validation-overlay'], function($, ValidationOverl
      * @constructor
      * @param {String} questionid The input name, for example ans1.
      * @param {String} prefix
-     * @param {Array} inputs An array of objects representing Stack inputs.
-     * @param {Object} editorOptions Editor options.
+     * @param {Object} inputdata An object containing STACK input data.
+     * @param {String} inputdata.input A string with the name of the STACK input.
+     * @param {String} inputdata.latexresponse Saved LaTeX data from a previous attempt or auto saved value.
+     * @param {Object} inputdata.inputoptions The input options set for the STACK input.
+     * @param {Object} editorOptions Editor specific options.
      * @param {Boolean} debug Flag to determine debug mode.
      */
-    var Editor = function(questionid, prefix, inputs, editorOptions, debug) {
+    var Editor = function(questionid, prefix, inputdata, editorOptions, debug) {
         this.questionid = questionid;
         this.prefix = prefix;
-        this.inputs = inputs;
+        this.inputdata = inputdata;
         this.editorOptions = editorOptions;
         this.debug = debug;
 
-        this.stackInputs = {};
-        this.validationOverlays = {};
+        this.name = inputdata.input;
+
+        this.$stackInput = null;
+        this.validationOverlay = null;
 
         this.readonly = null;
-        this.editorVisible = null;
 
         this._initValidation();
-        this._gatherStackInputs();
+        this._gatherStackInput();
     };
 
     /**
@@ -60,55 +64,41 @@ define(['jquery', 'qtype_stack/validation-overlay'], function($, ValidationOverl
     Editor.prototype.EDITOR_NAME = 'GENERIC';
 
     /**
-     * Init all ValidationOverlays. One for each validation field.
+     * Init the ValidationOverlay.
      * @private
      */
     Editor.prototype._initValidation = function() {
-        for (var i = 0; i < this.inputs.length; i++) {
-            var name = this.inputs[i].input;
-            // Add event listeners for validationDiv (where feedback is displayed).
-            var $valinput = $('#' + $.escapeSelector(this.prefix + name) + '_val');
-            if ($valinput) {
-                var validationOverlay = new ValidationOverlay($valinput);
-                this.validationOverlays[name] = validationOverlay;
-            }
+        var name = this.inputdata.input;
+        var $valinput = $('#' + $.escapeSelector(this.prefix + name) + '_val');
+        if ($valinput) {
+            this.validationOverlay = new ValidationOverlay($valinput);
         }
     };
 
     /**
-     * Find and cache all stack inputs as jQuery elements.
+     * Find and cache the stack input as a jQuery element.
      * @private
      */
-    Editor.prototype._gatherStackInputs = function() {
-        for (var i = 0; i < this.inputs.length; i++) {
-            var name = this.inputs[i].input;
-            // Add event listeners for validationDiv (where feedback is displayed).
-            var $stackInput = $('#' + $.escapeSelector(this.prefix + name));
-            if ($stackInput) {
-                this.stackInputs[name] = $stackInput;
-            }
+    Editor.prototype._gatherStackInput = function() {
+        var name = this.inputdata.input;
+        var $stackInput = $('#' + $.escapeSelector(this.prefix + name));
+        if ($stackInput) {
+            this.$stackInput = $stackInput;
         }
+
     };
 
     /**
      * Check if the editor is read only.
      * @returns {boolean} return true if the editor should be read only, otherwise false.
      */
-    Editor.prototype.isReadonly = function() {
+    Editor.prototype._isReadonly = function() {
         var readonly = this.readonly;
         if (readonly != null) {
             return readonly;
         }
 
-        var isAllRead = true;
-        var self = this;
-        Object.keys(this.stackInputs).forEach(function(input) {
-            if (self.stackInputs[input].prop('readonly')) {
-                isAllRead = false;
-            }
-        });
-        readonly = !isAllRead;
-
+        readonly = !!this.$stackInput.prop('readonly');
         return readonly;
     };
 
@@ -118,51 +108,47 @@ define(['jquery', 'qtype_stack/validation-overlay'], function($, ValidationOverl
      * @param {String} name the name of the input that has changed.
      * @param {String} message the error message to pass to the ValidationOverlay.
      */
-    Editor.prototype.inputError = function(name, message) {
-        var validationOverlay = this.getValidationOverlay(name);
+    Editor.prototype.inputError = function(message) {
+        var validationOverlay = this.getValidationOverlay();
         if (validationOverlay) {
             validationOverlay.displayErrorMessage(message);
         }
     };
 
     /**
-     * Get the stack input with the name passed as parameter.
-     * @param name the name of the input.
-     * @returns {jQuery} the stack input with the name passed as parameter.
+     * Get the stack input.
+     * @returns {jQuery} the stack input associated with this input.
      */
-    Editor.prototype.getStackInput = function(name) {
-        return this.stackInputs[name];
+    Editor.prototype.getStackInput = function() {
+        return this.$stackInput ? this.$stackInput : null;
     };
 
     /**
-     * Event handler that is fired when the stack input (with the name passed as parameter)
+     * Event handler that is fired when the stack input
      * contents should be validated immediately.
-     * @param name the name of the input that has changed.
-     * @param value the updated value to pass to the stack input.
+     * @param value The updated value to pass to the stack input.
      */
-    Editor.prototype.valueChanged = function(name, value) {
-        var validationOverlay = this.getValidationOverlay(name);
+    Editor.prototype.valueChanged = function(value) {
+        var validationOverlay = this.getValidationOverlay();
         if (validationOverlay) {
             validationOverlay.hide();
         }
 
-        var $stackInput = this.getStackInput(name);
+        var $stackInput = this.getStackInput();
         $stackInput.val(value);
         $stackInput.get(0).dispatchEvent(new Event('input')); // Event firing needs to be on a vanilla dom object.
 
         if (value === '') {
-            this.getValidationOverlay(name).getUnderlay().addClass('empty'); // Make sure the validation div is hidden.
+            validationOverlay.getUnderlay().addClass('empty'); // Make sure the validation div is hidden.
         }
     };
 
     /**
      * Get the validation overlay.
-     * @param name the name of the input the ValidationOverlay it is associated with.
-     * @returns {ValidationOverlay} a ValidationOverlay.
+     * @returns {ValidationOverlay} A ValidationOverlay.
      */
-    Editor.prototype.getValidationOverlay = function(name) {
-        var validationOverlay = this.validationOverlays[name];
-        return validationOverlay;
+    Editor.prototype.getValidationOverlay = function() {
+        return this.validationOverlay ? this.validationOverlay : null;
     };
 
     return Editor;
