@@ -148,20 +148,6 @@ class qtype_stack extends question_type {
         $options->variantsselectionseed     = $fromform->variantsselectionseed;
         $DB->update_record('qtype_stack_options', $options);
 
-
-        if ($editor && $fromform->editortype !== 'none') {
-            $editoroptions = [];
-            $usededitorsoptions = stack_editor_factory::get_options_used();
-            if (isset($usededitorsoptions[$fromform->editortype])) {
-                $editor->type = $fromform->editortype;
-                foreach ($usededitorsoptions[$editor->type] as $option) {
-                    $editoroptions[$option] = $fromform->{$editor->type . $option};
-                }
-                $editor->options = json_encode($editoroptions);
-                $editor->id = $DB->update_record('qtype_stack_editor', $editor);
-            }
-        }
-
         $inputnames = array_keys($this->get_input_names_from_question_text_lang($fromform->questiontext));
         $inputs = $DB->get_records('qtype_stack_inputs',
                 array('questionid' => $fromform->id), '', 'name, id, questionid');
