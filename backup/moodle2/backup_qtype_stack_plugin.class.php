@@ -61,6 +61,9 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
                        'syntaxhint', 'syntaxattribute', 'forbidwords', 'allowwords', 'forbidfloat', 'requirelowestterms',
                        'checkanswertype', 'mustverify', 'showvalidation', 'options'));
 
+        $stackeditor = new backup_nested_element('stackeditor', array('id'),
+            array('type', 'options'));
+
         $stackprts = new backup_nested_element('stackprts');
         $stackprt = new backup_nested_element('stackprt', array('id'),
                 array('name', 'value', 'autosimplify', 'feedbackvariables', 'firstnode'));
@@ -94,6 +97,7 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
 
         $pluginwrapper->add_child($stackinputs);
         $stackinputs->add_child($stackinput);
+        $stackinput->add_child($stackeditor);
 
         $pluginwrapper->add_child($stackprts);
         $stackprts->add_child($stackprt);
@@ -113,6 +117,7 @@ class backup_qtype_stack_plugin extends backup_qtype_plugin {
         // Set source to populate the data.
         $stackoptions->set_source_table('qtype_stack_options', array('questionid' => backup::VAR_PARENTID));
         $stackinput->set_source_table('qtype_stack_inputs', array('questionid' => backup::VAR_PARENTID));
+        $stackeditor->set_source_table('qtype_stack_input_editor', array('inputid' => backup::VAR_PARENTID));
         $stackprt->set_source_table('qtype_stack_prts', array('questionid' => backup::VAR_PARENTID));
         $stackprtnode->set_source_table('qtype_stack_prt_nodes',
                 array('questionid' => '../../../../../../../id', 'prtname' => '../../name'));

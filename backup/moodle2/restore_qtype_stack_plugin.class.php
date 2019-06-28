@@ -53,6 +53,7 @@ class restore_qtype_stack_plugin extends restore_qtype_plugin {
         $elements = array(
             'qtype_stack_options'        => '/stackoptions',
             'qtype_stack_input'          => '/stackinputs/stackinput',
+            'qtype_stack_input_editor'   => '/stackinputs/stackinput/stackeditor',
             'qtype_stack_prt'            => '/stackprts/stackprt',
             'qtype_stack_prt_node'       => '/stackprts/stackprt/stackprtnodes/stackprtnode',
             'qtype_stack_qtest'          => '/stackqtests/stackqtest',
@@ -108,6 +109,7 @@ class restore_qtype_stack_plugin extends restore_qtype_plugin {
         global $DB;
 
         $data = (object)$data;
+        $oldid = $data->id;
 
         if (!property_exists($data, 'options')) {
             $data->options = '';
@@ -119,7 +121,34 @@ class restore_qtype_stack_plugin extends restore_qtype_plugin {
         // If the question is being created, save this input.
         if ($questioncreated) {
             $data->questionid = $this->get_new_parentid('question');
-            $DB->insert_record('qtype_stack_inputs', $data, false);
+            $newitemid = $DB->insert_record('qtype_stack_inputs', $data);
+            $this->set_mapping('qtype_stack_input', $oldid, $newitemid);
+        }
+    }
+
+    /**
+     * Process the STACK editor.
+     * @param array/object $data the data from the backup file.
+     */
+    public function process_qtype_stack_input_editor($data) {
+        global $DB;
+
+        $data = (object)$data;
+
+        if (!property_exists($data, 'options')) {
+            $data->options = '';
+        }
+
+        // Detect if the question is created or mapped.
+        $questioncreated = (bool) $this->get_mappingid('question_created', $this->get_old_parentid('question'));
+
+        // If the question is being created, save this input.
+        if ($questioncreated) {
+
+            $data->questionid = $this->get_new_parentid('question');
+            $data->inputid = $this->get_new_parentid('qtype_stack_input');
+
+            $DB->insert_record('qtype_stack_input_editor', $data, false);
         }
     }
 
