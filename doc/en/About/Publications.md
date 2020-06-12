@@ -4,7 +4,9 @@ STACK is a very popular online assessment system, used by many groups in a varie
 
 ### Publicity materials.
 
-We have a PDF flyer about the [STACK project](%CONTENT/2018-STACK.pdf).
+We have a booklet of [case studies](%CONTENT/2019-cate-case-studies.pdf), and a PDF flyer about the [STACK project](%CONTENT/2018-STACK.pdf).
+
+We have a "Getting started with STACK" [guide](%CONTENT/2019-STACK-Guide.pdf).
 
 ### Computer aided assessment of mathematics
 
@@ -26,7 +28,7 @@ Proceedings of the 1st International STACK Conference can be found can be found 
 
 A comprehensive bibliography is available here: [STACK bibliography](%CONTENT/stack_publications.pdf), with the entries in [BiBTeX format](%CONTENT/stack.bib).
 
-Two recent papers about STACK are a good place to start.
+These two recent papers about STACK are a good place to start:
 
 * C. J. Sangwin and N. Kocher. [Automation of mathematics examinations](https://www.research.ed.ac.uk/portal/files/22213256/2015_11_9_AutomationExaminations.pdf). Computers and Education, 94:215-227, 2016.
 * C. J. Sangwin and I. Jones. [Asymmetry in student achievement on multiple choice and constructed response items in reversible mathematics processes](https://dspace.lboro.ac.uk/dspace-jspui/handle/2134/22120). Educational Studies in Mathematics, 94:205-222, 2017.

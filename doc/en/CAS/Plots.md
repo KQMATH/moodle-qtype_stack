@@ -100,6 +100,8 @@ The following CASText gives representative examples of the plot2d features suppo
     {@plot([discrete,[[0,0],[1,1],[0,2]]])@}
     Combination of discrete plots with normal plots.
     {@plot([x^2, [discrete,[ [0,0], [1,1], [0,2]]]],[x,-2,2])@}
+    {@plot([[discrete,[[30,7]]], -0.4*x+19],[x,0,60],[y,0,20],[style, points, lines], [color, red, blue],[point_type, asterisk])@}
+    {@plot([[discrete,[[10, 0.6], [20, 0.9], [30, 1.1], [40, 1.3], [50, 1.4]]], 2*%pi*sqrt(l/980)], [l,0,50],[style, points, lines], [color, red, blue],[point_type, asterisk])@}
     Using different point styles.
     {@plot([[discrete, [[10, .6], [20, .9], [30, 1.1],[40, 1.3], [50, 1.4]]],[discrete, [[11, .5], [15, .9], [25, 1.2],[40, 1.3], [50, 1.4]]]],[style, points],[point_type,circle,square],[color,black,green])@}
     <h3>Parametric plots</h3>
@@ -151,6 +153,11 @@ For a discontinuous function, with the endpoints circled etc. try adding some of
 Now use the CASText:
 
     {@plot([pg1, [discrete,[ [x0,ev(f0,x=x0)], [x0,ev(f1,x=x0)]]], [discrete,[ [x0,ev((f0+f1)/2,x=x0)]]] ], [x,(x0-5),(x0+5)], [y,-10,10], ps, pt, pc)@}
+
+
+## Graph theory
+
+It is possible to plot simple [discrete graphs](Discrete_mathematics.md) directly using STACK's `plot` command by building a combination of discrete and line plots.
 
 ## implicit_plot()  {#implicit}
 

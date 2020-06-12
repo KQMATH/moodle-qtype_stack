@@ -24,6 +24,7 @@ STACK stores all documentation within language subdirectories.  For example, Eng
   Note `index.md` will never be displayed in a directory listing, it can be accessed by navigating to the directory itself.
 * Directories may be nested.
 * A directory listing will be appended to the site map when rendered.
+* Metadata about the files is stored in `meta_en.json`.  Every page should have metadata.
 
 ## How relative links work in STACK's documentation##
 
@@ -57,6 +58,30 @@ Currently `\%CONTENT` is converted to `%CONTENT`. E.g.
 renders to
 
 ![STACK Logo](%CONTENT/logo.png)
+
+## Adding a link to video in the documentation
+
+To embed video into the documentation first find the unique video key, `VIDEO-KEY`, then then modify
+
+    [![IMAGE ALT TEXT](http://img.youtube.com/vi/VIDEO-KEY/0.jpg)](https://www.youtube.com/watch?v=VIDEO-KEY "Video title")
+
+For example, `cpwo-D6EUgA`, gives
+
+    [![IMAGE ALT TEXT](http://img.youtube.com/vi/cpwo-D6EUgA/0.jpg)](https://www.youtube.com/watch?v=cpwo-D6EUgA "Your First STACK Question")
+
+The following rendered markdown:
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/cpwo-D6EUgA/0.jpg)](https://www.youtube.com/watch?v=cpwo-D6EUgA "Your First STACK Question")
+
+## Embed video in the documentation
+
+Using an iframe such as
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/cpwo-D6EUgA" frameborder="0" allowfullscreen></iframe>
+
+Gives
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/cpwo-D6EUgA" frameborder="0" allowfullscreen></iframe>
 
 ## Mathematics
 

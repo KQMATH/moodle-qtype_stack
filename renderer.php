@@ -40,6 +40,7 @@ class qtype_stack_renderer extends qtype_renderer {
         global $CFG;
         $debug = $CFG->debugdeveloper;
 
+        /* Return type should be @var qtype_stack_question $question. */
         $question = $qa->get_question();
 
         $response = $qa->get_last_qt_data();
@@ -51,10 +52,37 @@ class qtype_stack_renderer extends qtype_renderer {
 
         // Replace inputs.
         $inputstovaldiate = array();
-        $qaid = null;
+
+        // Get the list of placeholders before format_text.
+        $originalinputplaceholders = array_unique(stack_utils::extract_placeholders($questiontext, 'input'));
+        sort($originalinputplaceholders);
+        $originalfeedbackplaceholders = array_unique(stack_utils::extract_placeholders($questiontext, 'feedback'));
+        sort($originalfeedbackplaceholders);
+
+        // Now format the questiontext.
+        $questiontext = $question->format_text(
+                stack_maths::process_display_castext($questiontext, $this),
+                $question->questiontextformat,
+                $qa, 'question', 'questiontext', $question->id);
+
+        // Get the list of placeholders after format_text.
+        $formatedinputplaceholders = stack_utils::extract_placeholders($questiontext, 'input');
+        sort($formatedinputplaceholders);
+        $formatedfeedbackplaceholders = stack_utils::extract_placeholders($questiontext, 'feedback');
+        sort($formatedfeedbackplaceholders);
+
+        // We need to check that if the list has changed.
+        // Have we lost some of the placeholders entirely?
+        // Duplicates may have been removed by multi-lang,
+        // No duplicates should remain.
+        if ($formatedinputplaceholders !== $originalinputplaceholders ||
+                $formatedfeedbackplaceholders !== $originalfeedbackplaceholders) {
+            throw new coding_exception('Inconsistent placeholders. Possibly due to multi-lang filtter not being active.');
+        }
+
         foreach ($question->inputs as $name => $input) {
             // Get the actual value of the teacher's answer at this point.
-            $tavalue = $question->get_session_variable($name);
+            $tavalue = $question->get_ta_for_input($name);
 
             $fieldname = $qa->get_qt_field_name($name);
             $state = $question->get_input_state($name, $response);
@@ -65,7 +93,6 @@ class qtype_stack_renderer extends qtype_renderer {
 
             $questiontext = $input->replace_validation_tags($state, $fieldname, $questiontext);
 
-            $qaid = $qa->get_database_id();
             if ($input->requires_validation()) {
                 $inputstovaldiate[] = $name;
             }
@@ -75,30 +102,31 @@ class qtype_stack_renderer extends qtype_renderer {
         foreach ($question->prts as $index => $prt) {
             $feedback = '';
             if ($options->feedback) {
-                $feedback = $this->prt_feedback($index, $response, $qa, $options, true);
+                $feedback = $this->prt_feedback($index, $response, $qa, $options, $prt->get_feedbackstyle());
 
             } else if (in_array($qa->get_behaviour_name(), array('interactivecountback', 'adaptivemulipart'))) {
                 // The behaviour name test here is a hack. The trouble is that interactive
                 // behaviour or adaptivemulipart does not show feedback if the input
                 // is invalid, but we want to show the CAS errors from the PRT.
                 $result = $question->get_prt_result($index, $response, $qa->get_state()->is_finished());
-                $feedback = html_writer::nonempty_tag('div', $result->errors,
+                $feedback = html_writer::nonempty_tag('span', $result->errors,
                         array('class' => 'stackprtfeedback stackprtfeedback-' . $name));
             }
             $questiontext = str_replace("[[feedback:{$index}]]", $feedback, $questiontext);
         }
 
-        // Now format the questiontext.  This should be done after the subsitutions of inputs and PRTs.
-        $questiontext = $question->format_text(
-                stack_maths::process_display_castext($questiontext, $this),
-                $question->questiontextformat,
-                $qa, 'question', 'questiontext', $question->id);
-
-
         // Initialise automatic validation, if enabled.
-        if ($qaid && stack_utils::get_config()->ajaxvalidation) {
+        if (stack_utils::get_config()->ajaxvalidation) {
+            // Once we cen rely on everyone being on a Moodle version that includes the fix for
+            // MDL-65029 (3.5.6+, 3.6.4+, 3.7+) we can remove this if and just call the method.
+            if (method_exists($qa, 'get_outer_question_div_unique_id')) {
+                $questiondivid = $qa->get_outer_question_div_unique_id();
+            } else {
+                $questiondivid = 'q' . $qa->get_slot();
+            }
             $this->page->requires->js_call_amd('qtype_stack/input', 'initInputs',
-                    [$inputstovaldiate, $qaid, $qa->get_field_prefix()]);
+                    [$questiondivid, $qa->get_field_prefix(),
+                            $qa->get_database_id(), $inputstovaldiate]);
         }
 
         // Prepare editor data, if used.
@@ -128,9 +156,9 @@ class qtype_stack_renderer extends qtype_renderer {
         $result .= $questiontext;
 
         if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                $question->get_validation_error($response),
-                array('class' => 'validationerror'));
+            $result .= html_writer::nonempty_tag('span',
+                    $question->get_validation_error($response),
+                    array('class' => 'validationerror'));
         }
 
         return $result;
@@ -163,40 +191,16 @@ class qtype_stack_renderer extends qtype_renderer {
 
         $urlparams = array('questionid' => $question->id);
 
-        // This is a bit of a hack to find the right thing to put in the URL.
-        $context = $question->get_context();
-        if (!empty($options->editquestionparams['cmid'])) {
-            $urlparams['cmid'] = $options->editquestionparams['cmid'];
-
-        } else if (!empty($options->editquestionparams['courseid'])) {
-            $urlparams['courseid'] = $options->editquestionparams['courseid'];
-
-        } else if ($cmid = optional_param('cmid', null, PARAM_INT)) {
-            $urlparams['cmid'] = $cmid;
-
-        } else if ($courseid = optional_param('courseid', null, PARAM_INT)) {
-            $urlparams['courseid'] = $courseid;
-
-        } else if ($context->contextlevel == CONTEXT_MODULE) {
-            $urlparams['cmid'] = $context->instanceid;
-
-        } else if ($context->contextlevel == CONTEXT_COURSE) {
-            $urlparams['courseid'] = $context->instanceid;
-
-        } else {
-            $urlparams['courseid'] = get_site()->id;
-        }
-
         $links = array();
         if ($question->user_can_edit()) {
-            $links[] = html_writer::link(new moodle_url(
-                    '/question/type/stack/tidyquestion.php', $urlparams),
+            $links[] = html_writer::link(
+                    $question->qtype->get_tidy_question_url($question),
                     stack_string('tidyquestion'));
         }
 
         $urlparams['seed'] = $question->seed;
-        $links[] = html_writer::link(new moodle_url(
-                '/question/type/stack/questiontestrun.php', $urlparams),
+        $links[] = html_writer::link(
+                $question->qtype->get_question_test_url($question),
                 stack_string('runquestiontests'));
 
         return html_writer::tag('div', implode(' | ', $links), array('class' => 'questiontestslink'));
@@ -237,7 +241,7 @@ class qtype_stack_renderer extends qtype_renderer {
             $feedback = '';
             $result = $question->get_prt_result($name, $response, $qa->get_state()->is_finished());
             if ($result->errors) {
-                $feedback = html_writer::nonempty_tag('div', $result->errors,
+                $feedback = html_writer::nonempty_tag('span', $result->errors,
                         array('class' => 'stackprtfeedback stackprtfeedback-' . $name));
             }
             $allempty = $allempty && !$feedback;
@@ -281,7 +285,7 @@ class qtype_stack_renderer extends qtype_renderer {
         // Replace any PRT feedback.
         $allempty = true;
         foreach ($question->prts as $index => $prt) {
-            $feedback = $this->prt_feedback($index, $response, $qa, $options, $individualfeedback);
+            $feedback = $this->prt_feedback($index, $response, $qa, $options, $prt->get_feedbackstyle());
             $allempty = $allempty && !$feedback;
             $feedbacktext = str_replace("[[feedback:{$index}]]",
                     stack_maths::process_display_castext($feedback, $this), $feedbacktext);
@@ -328,12 +332,12 @@ class qtype_stack_renderer extends qtype_renderer {
      * @param array $response the most recent student response.
      * @param question_attempt $qa the question attempt to display.
      * @param question_display_options $options controls what should and should not be displayed.
-     * @param bool $includestandardfeedback whether to include the standard
+     * @param int feedbackstyle whether and how to include the standard.
      *      'Your answer is partially correct' bit at the start of the feedback.
      * @return string nicely formatted feedback, for display.
      */
     protected function prt_feedback($name, $response, question_attempt $qa,
-            question_display_options $options, $includestandardfeedback) {
+            question_display_options $options, int $feedbackstyle) {
         $question = $qa->get_question();
 
         $relevantresponse = $this->get_applicable_response_for_prt($name, $response, $qa);
@@ -345,7 +349,7 @@ class qtype_stack_renderer extends qtype_renderer {
         if (is_null($result->valid)) {
             return '';
         }
-        return $this->prt_feedback_display($name, $qa, $question, $result, $options, $includestandardfeedback);
+        return $this->prt_feedback_display($name, $qa, $question, $result, $options, $feedbackstyle);
     }
 
     /**
@@ -355,11 +359,12 @@ class qtype_stack_renderer extends qtype_renderer {
      * @param question_definition $question the question being displayed.
      * @param stack_potentialresponse_tree_state $result the results to display.
      * @param question_display_options $options controls what should and should not be displayed.
+     * @param feedbackstyle styles the type of feedback.
      * @return string nicely formatted feedback, for display.
      */
     protected function prt_feedback_display($name, question_attempt $qa,
             question_definition $question, stack_potentialresponse_tree_state $result,
-            question_display_options $options, $includestandardfeedback) {
+            question_display_options $options, $feedbackstyle) {
         $err = '';
         if ($result->errors) {
             $err = $result->errors;
@@ -382,6 +387,7 @@ class qtype_stack_renderer extends qtype_renderer {
                     }
                 }
             }
+
             if (is_null($format)) {
                 $format = FORMAT_HTML;
             }
@@ -399,14 +405,32 @@ class qtype_stack_renderer extends qtype_renderer {
                 $qa->get_behaviour()->get_part_mark_details($name), $options);
         }
 
-        if ($includestandardfeedback) {
-            $standardfeedback = $this->standard_prt_feedback($qa, $question, $result);
-        } else {
-            $standardfeedback = '';
+        $standardfeedback = $this->standard_prt_feedback($qa, $question, $result, $feedbackstyle);
+
+        $tag = 'div';
+        switch ($feedbackstyle) {
+            case 0:
+                // Formative PRT.
+                $fb = $err . $feedback;
+                break;
+            case 1:
+                $fb = $standardfeedback . $err . $feedback . $gradingdetails;
+                break;
+            case 2:
+                // Compact.
+                $fb = $standardfeedback . $err . $feedback;
+                $tag = 'span';
+                break;
+            case 3:
+                // Symbolic.
+                $fb = $standardfeedback . $err;
+                $tag = 'span';
+                break;
+            default:
+                echo "i is not equal to 0, 1 or 2";
         }
 
-        return html_writer::nonempty_tag('div', $standardfeedback . $err . $feedback . $gradingdetails,
-                array('class' => 'stackprtfeedback stackprtfeedback-' . $name));
+        return html_writer::nonempty_tag($tag, $fb, array('class' => 'stackprtfeedback stackprtfeedback-' . $name));
     }
 
     /**
@@ -414,16 +438,23 @@ class qtype_stack_renderer extends qtype_renderer {
      * @param question_attempt $qa the question attempt to display.
      * @param question_definition $question the question being displayed.
      * @param stack_potentialresponse_tree_state $result the results to display.
+     * @param feedbackstyle styles the type of feedback.
      * @return string nicely standard feedback, for display.
      */
-    protected function standard_prt_feedback($qa, $question, $result) {
+    protected function standard_prt_feedback($qa, $question, $result, $feedbackstyle) {
         if ($result->errors) {
             return '';
         }
 
         $state = question_state::graded_state_for_fraction($result->score);
-
         $class = $state->get_feedback_class();
+
+        // Compact and symbolic only.
+        if ($feedbackstyle === 2 || $feedbackstyle === 3) {
+            $s = get_string('symbolicprt' . $class . 'feedback', 'qtype_stack');
+            return html_writer::tag('span', $s, array('class' => $class));
+        }
+
         $field = 'prt' . $class . 'instantiated';
         $format = 'prt' . $class . 'format';
         if ($question->$field) {
@@ -465,7 +496,8 @@ class qtype_stack_renderer extends qtype_renderer {
         }
 
         $result = new stack_potentialresponse_tree_state(1, true, $fraction);
-        return $this->standard_prt_feedback($qa, $qa->get_question(), $result);
+        // This is overall, so we fix the PRT feedbackstyle style = 1 to get the default type of feedback.
+        return $this->standard_prt_feedback($qa, $qa->get_question(), $result, 1);
     }
 
     protected function hint(question_attempt $qa, question_hint $hint) {

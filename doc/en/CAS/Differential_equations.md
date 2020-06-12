@@ -5,16 +5,15 @@ in [Maxima](Maxima.md) when writing STACK questions.
 
 ## Representing ODEs
 
-In a Maxima session (rather than STACK question variables) we can represent an ODE as
+In a Maxima session we can represent an ODE as
 
     ODE: x^2*'diff(y,x) + 3*y*x = sin(x)/x;
 
-Notice the use of the `'` character in front of the `diff` function to [prevent evaluation](http://maxima.sourceforge.net/docs/manual/en/maxima_4.html#SEC10). Applied to a function call, such as `diff`, the single quote prevents evaluation of the function call, although the arguments of the function are still evaluated (if evaluation is not otherwise prevented). The result is the noun form of the function call.
+Notice the use of the `'` character in front of the `diff` function to prevent evaluation. Applied to a function call, such as `diff`, the single quote prevents evaluation of the function call, although the arguments of the function are still evaluated (if evaluation is not otherwise prevented). The result is the noun form of the function call.
 
 ## Displaying ODEs
 
-Maxima has two notations to display ODEs.  
-
+Maxima has two notations to display ODEs.
 
 If `derivabbrev:false` then`'diff(y,x)` is displayed in STACK as \( \frac{\mathrm{d}y}{\mathrm{d}x}\).   Note this differs from Maxima's normal notation of \( \frac{\mathrm{d}}{\mathrm{d}x}y\).
 
@@ -55,18 +54,17 @@ It also provides many intermediate steps which are useful for a worked solution.
 
 ### % characters from solve and ode2 {#Solve_and_ode2}
 
-Maxima functions such as solve and ode2 add arbitrary constants, such as constants of integration.  In Maxima these are indicated adding constants which begin with percentage characters.  For example,
+Maxima functions such as `solve` and `ode2` add arbitrary constants, such as constants of integration.  In Maxima these are indicated adding constants which begin with percentage characters.  For example,
 
+    assume(x>0);
     eq1:x^2*'diff(y,x) + 3*y*x = sin(x)/x;
     sol:ode2(eq1,y,x);
 
 results in
 
-    y = (%c-cos(x))/x^3
+    y = (%c-cos(x))/x^3;
 
-Notice the `%c` in this example.
-STACK forbids the use of the `%` character for security reasons: you can refer to previous sessions for example.
-Therefore, we need a function to strip out the variables starting with `%`.
+Notice the `%c` in this example. We need a function to strip out the variables starting with `%`, especially as these are sometimes numbered and we want to use a definite letter, or sequence for the constants.
 
 The function `stack_strip_percent(ex,var)` replaces all variable names  starting with `%` with those in `var`.
 There are two ways to use this.
@@ -76,29 +74,35 @@ There are two ways to use this.
 
 For example
 
-    stack_strip_percent(y = (%c-cos(x))/x^3,k)
+    stack_strip_percent(y = (%c-cos(x))/x^3,k);
 
 returns
 
-    y = (k[1]-cos(x))/x^3
+    y = (k[1]-cos(x))/x^3;
 
 This is displayed in STACK using subscripts, which is natural.
 The unevaluated list method also does not need to know how many % signs appear in the expression.
 The other usage is to provide explicit names for each variable, but the list must be longer than the number of constants in `ex`, e.g.
 
-    stack_strip_percent(y = (%c-cos(x))/x^3,[c1,c2])
+    stack_strip_percent(y = (%c-cos(x))/x^3,[c1,c2]);
 
 which returns
 
-    y = (c1-cos(x))/x^3
+    y = (c1-cos(x))/x^3;
 
 The following example question variables can be used within STACK.
 
-    ode = x^2*'diff(y,x) + 3*y*x = sin(x)/x
-    sol = stack_strip_percent(ode2(ode,y,x),[k])
-    ta = rhs(ev(sol,nouns))
+    assume(x>0);
+    ode : x^2*'diff(y,x) + 3*y*x = sin(x)/x;
+    sol : stack_strip_percent(ode2(ode,y,x),[k]);
+    ta  : rhs(ev(sol,nouns));
 
 Note, you may need to use the Option "assume positive" to get ODE to evaluate the integrals formally and hence "solve correctly".
+
+If you need to create a list of numbered variables use
+
+    vars0:stack_var_makelist(k, 5);
+    vars1:rest(stack_var_makelist(k, 6));
 
 ## Assessing answers ##
 
@@ -126,13 +130,12 @@ E.g. in Maxima code
     sa2:ev(sa1,nouns);
     sa3:fullratsimp(expand(sa2));
 
-sa1, sa2 and sa2 can be used as part of the feedback when a student doesn't get the right answer.
-This is shown below with the values of these three variables displayed in the feedback.
-[ODE feedback example](http://web.mat.bham.ac.uk/C.J.Sangwin/stack/odescreen.jpg)
+`sa1`, `sa2` and `sa2` can be used as part of the feedback when a student doesn't get the right answer.
 
 ### Satisfying any initial/boundary conditions ###
 
-If the student's answer is `ans` then we can check initial/boundary conditions at a point `x=x0` simply by
+If the student's answer is `ans` then we can check initial/boundary conditions at a point `x=x0` simply by using
+
     ev(ans,x=x0);
     block([ds],ds:diff(ans,x),ev(ds,x=x0));
 
@@ -166,6 +169,7 @@ A [sample question](../Authoring/Sample_questions.md) of this type is provided b
     sa3 : fullratsimp(expand(sa2));
     l   : delete(t,listofvars(ans1));
     lv  : length(l);
+
     b1  : ev(ans1,t=0,fullratsimp);
     b2  : ev(ans1,t=1,fullratsimp);
     m   : float(if b2#0 then fullratsimp(b1/b2) else 0);
@@ -197,6 +201,24 @@ We potentially have quite a variety of solutions.
 \[ y=Ae^{(-1+2i)t}+Be^{(-1-2i)t}\]
 
 The advantage is that the same code correctly assesses all these forms of the answer.
+
+### Separating the general from particular solution.
+
+Consider the differential equation \[ \ddot{y}+4\dot{y}=8\tan(t) \] with corresponding general solution
+
+    ode:'diff(y,t,2)+4*y-8*tan(t);
+    ans1:-2*sin(2*t)-4*t*cos(2*t)+4*log(cos(t))*sin(2*t)+c_1*cos(2*t)+c_2*sin(2*t);
+
+The solution of such an equation consists of the sum \(y(t) = c_1\ y_1(t)+c_2\ y_2(t)+y_p(t)\).   The _general solution_ is the term \(c_1\ y_1(t)+c_2\ y_2(t)\) and the particular solution is the part \(y_p(t)\).  It is useful to separate these.  Run the above code, which should work.  Then we execute the following, which checks the general solution part is made up of two linearly independent parts.
+
+    /* Calculate the "Particular integral", (by setting both constants to zero) and then separate out the "general solution".*/
+    ansPI:ev(ans1,maplist(lambda([ex],ex=0), l));
+    ansGS:ans1-ansPI;
+    g1  : ev(ansGS,t=0,fullratsimp);
+    g2  : ev(ansGS,t=1,fullratsimp);
+    m   : float(if g2#0 then fullratsimp(g1/g2) else 0);
+
+Notice to calculate \(y_p(t)\) we set the constants \(c_1=c_2=0\), but using the variables in the list `l` which is defined above as the list of constants without \(t\).
 
 ## First order exact differential equations ##
 
@@ -310,7 +332,30 @@ Further examples are
     ODE:(3*x^2*cos(3*y)+2*y)*'diff(y,x)=-2*x*sin(3*y)$
     ODE:x*'diff(y,x)+y+4$
 
+# Modelling with differential equations.
+
+It is sometimes necessary for the student's answer to be a differential equation.
+
+Student's answers are always automatically converted to noun forms.  That is a student's answer `diff(y,x)` is converted internally to `noundiff(y,x)` to prevent evaluation to zero.
+
+However, the `AlgEquiv` answer test does evaluate all nouns!  So, a student's answer `diff(y,x)` will be found algebraically equivalent to `0`.
+
+In Maxima `diff(y(x),x)` is not evaluated further.  Getting students to type `diff(y(x),x)` and not `diff(y,x)` will be a challange.  Hence, if you want to condone the difference, it is probably best to evaluate the student's answer in the feedback variables as follows to ensure all occurances of `y` become `y(x)`.
+
+    ans1:'diff(y(x),x)+1 = 0;
+    ansyx:subst(y,y(x),ans1);
+
+Trying to substitute `y(x)` for `y` will throw an error.  Don't use the following, as if the student has used `y(x)` then it will become `y(x)(x)`! 
+
+    ans1:'diff(y,x)+1 = 0;
+    ansyx:ev(ans1,y=y(x));
+
+The `ATEqualComAss` also evaluates its arguments but does not "simplify" them.  So, counter-intuatively perhaps, we currently do have `ATEqualComAss(diff(x^2,x), 2*x);` as true.
+
+Student's answers always have noun forms added to `diff`, so if a student types in (literally) `diff(y,x,1)+1 = 0` this will end up being sent to answer test as `'diff(y,x,1)+1 = 0`.  Note the spostrophie at the start protects the student's `diff` from evaluation.
+
+Note that postfix apostrophies are not supported, i.e. `y'(x)` or `y'` is not currently permitted as input syntax.
+
 ## See also
 
 [Maxima reference topics](index.md#reference)
-

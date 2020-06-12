@@ -258,7 +258,7 @@
                         (member (get-first-char f) '(#\% #\$)) ;; insist it is a % or $ function
                         (not (member 'array (cdar fx) :test #'eq)) ; fix for x[i]^2
                         (not (member f '(%sum %product %derivative %integrate %at $texsub
-                                         %lsum %limit $pderivop $+-) :test #'eq)) ;; what else? what a hack...
+                                         %lsum %limit $pderivop $#pm#) :test #'eq)) ;; what else? what a hack...
                         (or (and (atom expon) (not (numberp expon))) ; f(x)^y is ok
                             (and (atom expon) (numberp expon) (> expon 0))))))
                                         ; f(x)^3 is ok, but not f(x)^-1, which could
@@ -340,14 +340,105 @@
 ;; Define an "arrayp" function to check if we have a Maxima array.
 (defmfun $arrayp (x) (and (not (atom x)) (cond ((member 'array (car x) :test #'eq) $true) (T $false))))
 
-;; Sort out binding power of %union to display correctly.
-;; tex-support is defined in to_poly_solve_extra.lisp.
-(defprop $%union 115. tex-rbp)
-
-
+;; *************************************************************************************************
 ;; Added 19 Dec 2018.
 ;; Based src/mformat.lisp
 
 ;; Suppress warnings printed by mtell, e.g. by solve, rat and other functions.
 ;; Use the Maxima variable stack_mtell_quiet.
 (defun mtell (&rest l) (cond ((eq $stack_mtell_quiet $true) (values)) (t (apply #'mformat nil l))));
+
+;; *************************************************************************************************
+;; Added 31 Oct 2019.
+;;
+;; catchable-syntax-error.lisp
+;; copyright 2019 by Robert Dodier
+;; I release this work under terms of the GNU General Public License v2
+
+;; Helper for MREAD-SYNERR.
+;; Adapted from local function PRINTER in built-in MREAD-SYNERR.
+
+(defun mread-synerr-printer (x)
+  (cond ((symbolp x)
+         (print-invert-case (stripdollar x)))
+        ((stringp x)
+         (maybe-invert-string-case x))
+        (t x)))
+
+;; Punt to Maxima function 'error' so that syntax errors can be caught by 'errcatch'.
+;; This definition replaces the built-in MREAD-SYNERR
+;; which throws to the top level of the interpreter in a way which cannot
+;; be intercepted by 'errcatch'.
+;;
+;; After a syntax error is detected, the global variable 'error'
+;; contains the error message (which is also printed on the console
+;; when the error occurs).
+;;
+;; Aside from punting to 'error', this implementation doesn't try to
+;; do anything else which the built-in MREAD-SYNERR does. In particular
+;; this implementation doesn't try to output any input-line information.
+
+(defun mread-synerr (format-string &rest l)
+  (let*
+    ((format-string-1 (concatenate 'string "syntax error: " format-string))
+     (format-string-args (mapcar #'mread-synerr-printer l))
+     (message-string (apply #'format nil format-string-1 format-string-args)))
+    (declare (special *parse-stream*))
+    (when (eql *parse-stream* *standard-input*)
+      (read-line *parse-stream* nil nil))
+    ($error message-string)))
+
+;; *************************************************************************************************
+;; Added 08 Jan 2020.
+;; Based src/grind.lisp
+
+;; Up the binding power of mminus, so that -(a/b) outputs exactly this way and not -a/b = (-a)/b.
+;; Subtle differences.
+
+;; In a maxima session type
+;; :lisp (defprop mminus 120. rbp);
+
+;; We provide just two specific functions here, and do not allow users to set an arbitrary binding power.
+
+;; *************************************************************************************************
+
+(defmspec $mminusbp120 (x)
+  (setq x (car x))
+  (defprop mminus 120. rbp)
+  (defprop mminus 120. lbp)
+  '$done
+)
+
+(defmspec $mminusbp100 (x)
+  (setq x (car x))
+  (defprop mminus 100. rbp)
+  (defprop mminus 100. lbp)
+  '$done
+)
+
+;; *************************************************************************************************
+;; Added 08 Jan 2020.
+;; Needed for %union, etc, where we don't display unions of just one item as unions.
+
+(defprop $%union tex-nary2 tex)
+(defprop $%union (" \\cup ") texsym)
+;; Sort out binding power of %union to display correctly.
+;; tex-support is defined in to_poly_solve_extra.lisp.
+(defprop $%union 114. tex-rbp)
+(defprop $%union 115. tex-lbp)
+
+(defprop $%intersection tex-nary2 tex)
+(defprop $%intersection (" \\cap ") texsym)
+(defprop $%intersection 114. tex-lbp)
+(defprop $%intersection 115. tex-rbp)
+
+
+(defun tex-nary2 (x l r)
+  (let* ((op (caar x)) (sym (texsym op)) (y (cdr x)) (ext-lop lop) (ext-rop rop))
+    (cond ((null y)       (tex-function x l r t)) ; this should not happen
+          ((null (cdr y)) (tex (car y) l r lop rop)) ; Single elements in the argument.
+          (t (do ((nl) (lop ext-lop op) (rop op (if (null (cdr y)) ext-rop op)))
+                 ((null (cdr y)) (setq nl (append nl (tex (car y)  l r lop rop))) nl)
+           (setq nl (append nl (tex (car y) l sym lop rop))
+             y (cdr y)
+             l nil))))))

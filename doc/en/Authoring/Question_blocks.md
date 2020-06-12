@@ -15,7 +15,7 @@ an input block based on student input, well not just by using an `[[if/]]`-block
 want. Such adaptation requires persistent modifiable question state and is not currently possible in STACK; however, there is work being done to create systems that would allow it.
 
 
-## General Syntax ##
+## General syntax ##
 
 The syntax is quite similar to XML but preserving the style ``[[ ... ]]`` used in the inputs and potential response tree declarations.
 
@@ -117,6 +117,12 @@ Comment blocks allow you to put content into CASText which will not be seen by s
     [[ comment ]] Place comments here which will not appear to students. [[/ comment ]]
 
 Note that, in the current form the comment block requires that the contents are syntactically correct so no mismatched blocks are possible inside comments.  (We intend to change this in the future.)
+
+## The debug block ##
+
+The special "debug" block allows question authors to see all the values of variables created during a session in a table.  Do not leave this block in a live question!
+
+    [[ debug /]]
 
 ## Empty blocks ##
 

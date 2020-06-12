@@ -46,9 +46,7 @@ This variable can be set at the question level using the [options](../Authoring/
 When this is `false`, no simplification is performed and Maxima is quite happy to deal with an expression such as \(1+4\) without actually performing the addition.
 This is most useful for dealing with very elementary expressions.
 
-## Selective simplification
-
-If you are using `simp:false` to evaluate an expression with simplification on you can use
+If you are using `simp:false` to evaluate an expression with simplification on, you can use
 
     ev(ex,simp)
 
@@ -110,7 +108,7 @@ How do we do the following in Maxima?
      factor(radcan((x-1)*(k*(x-1))^a))
 
 
-Maxima's internal representation of an expression sometimes does not correspond with what you expect -- in that case, `dispform` may help to bring it into the form you expect. For example, the output of `solve` in the following code shows the \(b\) in the denominator as \(b^{-1}\) which gives unnatural-looking output when a value is substituted in -- this is fixed by using `dispform` and substituting into that version instead.
+Maxima's internal representation of an expression sometimes does not correspond with what you expect -- in that case, `dispform` may help to bring it into the form you expect. For example, the output of `solve` in the following code shows the \(b\) in the denominator as \(b^{-1}\) which gives unnatural-looking output when a value is substituted in -- this is fixed by using `dispform` and substituting into that variants instead.
 
     simp:true;
     eqn:b = 1/(6*a+3);
@@ -141,36 +139,6 @@ To create the binomial coefficients
     n:5;
     apply("+",map(lambda([ex],binomial(n,ex)*x^ex), ev(makelist(k,k,0,5),simp)));
 
-## Boolean functions
-
-Maxima has Boolean operators `and`, `or`, and `not`.  These rely on the underlying LISP implementation and as a result the `simp:false` is ignored.  
-To illustrate the problem, try the following.
-
-    simp:false$
-    true and true;
-    x=1 or x=2;
-
-The results respectively (of the second two) are
-
-    true;
-    false;
-
-Note, there is no mechanism in Maxima to represent a list of assignments such as `x=1 or x=2`, 
-which would be a natural way to express the solution to a quadratic equation.
-
-To solve this problem STACK has introduced `nounand` and `nounor` which are commutative and associative operators.
-
-Students do *not* need to use `nounand` and `nounor` in answers.  
-Any `and` and `or` operators occurring in their answers are always automatically converted into these noun forms.
-
-Teachers *always* need to use `nounand` and `nounor` in CAS expressions when they want to write non-simplifying expressions.  
-For example, when defining the "teacher's answer" they should use the noun forms as appropriate.  
-Teachers often need to use Boolean logic, and so need to consciously separate the difference between these operators and concepts.
-
-Note, the answer tests do *not* convert noun forms to the Maxima forms.  
-Otherwise both `x=1 or x=2` and `x=1 or x=3` would be evaluated to `false` and a teacher could not tell that they are different!  
-To replace all `nounand` (etc) operators and replace them with the Maxima equivalent, use `noun_logic_remove(ex)`.
-
 ## Surds
 
 Imagine you would like the student to expand out \( (\sqrt{5}-2)(\sqrt{5}+4)=2\sqrt{5}-3 \). 
@@ -183,7 +151,7 @@ You probably then want to make sure a student has "gathered" like terms.  In par
 \[ 2\sqrt{5}-3 \mbox{ or } \sqrt{20}-3\]
 but not \[ 5+4\sqrt{2}-2\sqrt{2}+6.\]
 This causes a problem because `ATComAss` thinks that \[ 2\sqrt{5}-3 \neq \sqrt{20}-3.\]
-So you can't use `ATComAss` here, and guarantee that all random versions will work by testing that we really have \(5+4\sqrt{2}\) for example.
+So you can't use `ATComAss` here, and guarantee that all random variants will work by testing that we really have \(5+4\sqrt{2}\) for example.
 
 What we really want is for the functions `sqrt` and `+` to appear precisely once in the student's answer, or that the answer is a sum of two things.
 
@@ -198,12 +166,16 @@ See also the Maxima documentation on `radexpand`.  For example
 
 The first of these does not pull out a numerical denominator.  The second does.
 
+## Boolean functions
+
+See the page on [propositional logic](Propositional_Logic.md).
+
 ## Further examples
 
 Some further examples are given elsewhere:
 
 * Matrix examples in [showing working](Matrix.md#Showing_working).
-* An example of a question with `simp:false` is discussed in [authoring quick start 3](../Authoring/Authoring_quick_start_3.md).
+* An example of a question with `simp:false` is discussed in [authoring quick start 7](../Authoring/Authoring_quick_start_7.md).
 * Generating [random algebraic expressions](Random.md) which need to be "gathered and sorted".
 
 Note also that [question tests](../Authoring/Testing.md#Simplification) do not simplify test inputs.

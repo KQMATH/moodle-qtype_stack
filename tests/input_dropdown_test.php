@@ -64,7 +64,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
         $expected = '<select id="menustack1__ans1" class="select menustack1__ans1" name="stack1__ans1">'
                 .'<option value="">(No answer given)</option><option value="1"><code>1+x</code></option>'
                 .'<option selected="selected" value="2"><code>2+y</code></option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                 stack_input::SCORE, array('2'), '', '', '', '', ''), 'stack1__ans1', false, null));
     }
 
@@ -108,7 +108,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
         $expected = '<select id="menustack1__ans1" class="select menustack1__ans1" name="stack1__ans1">'
                 . '<option value="">(No answer given)</option><option value="1"><code>1</code></option>'
                 . '<option selected="selected" value="2"><code>1</code></option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                 stack_input::SCORE, array('2'), '', '', '', '', ''), 'stack1__ans1', false, null));
     }
 
@@ -135,7 +135,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
                 .'<option value="">(No answer given)</option>'
                 .'<option value="1"><code>x+1</code></option><option value="2"><code>x+2</code></option>'
                 .'<option selected="selected" value="3"><code>sin(pi*n)</code></option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                         stack_input::SCORE, array('3'), '', '', '', '', ''), 'stack1__ans1', false, null));
     }
 
@@ -145,7 +145,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
         $expected = '<select id="menustack1__ans1" class="select menustack1__ans1" name="stack1__ans1">'
                 .'<option value="1"><code>x+1</code></option><option value="2"><code>x+2</code></option>'
                 .'<option selected="selected" value="3"><code>sin(pi*n)</code></option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                 stack_input::SCORE, array('3'), '', '', '', '', ''), 'stack1__ans1', false, null));
     }
 
@@ -155,7 +155,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
                 .'<option value="">(No answer given)</option><option value="1">\(x+1\)</option>'
                 .'<option value="2">\(x+2\)</option>'
                 .'<option selected="selected" value="3">\(\sin \left( \pi\cdot n \right)\)</option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                         stack_input::SCORE, array('3'), '', '', '', '', ''), 'stack1__ans1', false, null));
     }
 
@@ -165,7 +165,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
                 .'<option value="">(No answer given)</option><option value="1">\[x+1\]</option>'
                 .'<option value="2">\[x+2\]</option>'
                 .'<option selected="selected" value="3">\[\sin \left( \pi\cdot n \right)\]</option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                         stack_input::SCORE, array('3'), '', '', '', '', ''), 'stack1__ans1', false, null));
     }
 
@@ -188,21 +188,21 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
     public function test_validate_student_response_blank() {
         $options = new stack_options();
         $el = $this->make_dropdown();
-        $state = $el->validate_student_response(array('ans1' => ''), $options, 'x+1', null);
+        $state = $el->validate_student_response(array('ans1' => ''), $options, 'x+1', new stack_cas_security());
         $this->assertEquals(stack_input::BLANK, $state->status);
     }
 
     public function test_validate_student_response_x_plus_1() {
         $options = new stack_options();
         $el = $this->make_dropdown();
-        $state = $el->validate_student_response(array('ans1' => '1'), $options, '1', null);
+        $state = $el->validate_student_response(array('ans1' => '1'), $options, '1', new stack_cas_security());
         $this->assertEquals(stack_input::SCORE, $state->status);
     }
 
     public function test_validate_student_response_x_plus_2() {
         $options = new stack_options();
         $el = $this->make_dropdown();
-        $state = $el->validate_student_response(array('ans1' => '2'), $options, '2', null);
+        $state = $el->validate_student_response(array('ans1' => '2'), $options, '2', new stack_cas_security());
         $this->assertEquals(stack_input::SCORE, $state->status);
     }
 
@@ -214,9 +214,9 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
                 . '<option value="">(No answer given)</option><option value="1"><code>1+x</code></option>'
                 . '<option selected="selected" value="2"><code>2+x^2</code></option>'
                 . '<option value="3">None of these</option></select>';
-        $this->assertSameSelectHtml($expected, $el->render(new stack_input_state(
+        $this->assert_same_select_html($expected, $el->render(new stack_input_state(
                 stack_input::SCORE, array('2'), '', '', '', '', ''), 'stack1__ans1', false, null));
-        $state = $el->validate_student_response(array('ans1' => '3'), $options, '2', null);
+        $state = $el->validate_student_response(array('ans1' => '3'), $options, '2', new stack_cas_security());
         $this->assertEquals(stack_input::SCORE, $state->status);
         $this->assertEquals(array('3'), $state->contents);
         $this->assertEquals('{}', $state->contentsmodified);
@@ -231,7 +231,7 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
         $this->assertEquals($correctresponse,
                 $el->get_correct_response('[[1+x,false],[2+x^2,true],[{},false,"None of these"]]'));
 
-        $correctresponse = 'A correct answer is <code>2+x^2</code> .';
+        $correctresponse = 'A correct answer is: <code>2+x^2</code>';
         $this->assertEquals($correctresponse,
                 $el->get_teacher_answer_display(null, null));
     }
@@ -244,7 +244,8 @@ class stack_dropdown_input_test extends qtype_stack_walkthrough_test_base {
         $this->assertEquals($correctresponse,
                 $el->get_correct_response('[[1+x,false],[2+x^2,false],[{},true,"None of these"]]'));
 
-        $correctresponse = 'A correct answer is <code>"None of these"</code> .';
+        $el->adapt_to_model_answer('[[1+x,false],[2+x^2,false],[{},true,"None of these"]]');
+        $correctresponse = 'A correct answer is: <code>"None of these"</code>';
         $this->assertEquals($correctresponse,
                 $el->get_teacher_answer_display(null, null));
     }

@@ -109,30 +109,52 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
         $expectedq = test_question_maker::make_question('stack', 'test3');
         $expectedq->stamp = $q->stamp;
         $expectedq->version = $q->version;
+        $expectedq->timemodified = $q->timemodified;
+
+        $eprts = $expectedq->prts;
+        foreach ($q->prts as $key => $prt) {
+            $this->assertEquals($eprts[$key]->get_maxima_representation(), $prt->get_maxima_representation());
+        }
+        $expectedq->prts = null;
+        $q->prts = null;
         $this->assertEquals($expectedq, $q);
     }
 
-    public function test_question_tests_test0() {
+    public function test_question_tests_test3() {
         // This unit test runs a question test, really just to verify that
         // there are no errors.
-        $qdata = test_question_maker::get_question_data('stack', 'test0');
-        $question = question_bank::get_qtype('stack')->make_question($qdata);
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
 
-        // Create the question usage we will use.
-        $quba = question_engine::make_questions_usage_by_activity('qtype_stack', context_system::instance());
-        $quba->set_preferred_behaviour('adaptive');
-        $question->seed = 1;
-        $slot = $quba->add_question($question, $question->defaultmark);
-        $quba->start_question($slot, 1);
+        // Create a test question.
+        $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
+        $cat = $generator->create_question_category();
+        $question = $generator->create_question('stack', 'test3', array('category' => $cat->id));
 
-        // Prepare the display options.
-        $options = new question_display_options();
-        $options->readonly = true;
-        $options->flags = question_display_options::HIDDEN;
-        $options->suppressruntestslink = true;
+        $questionid = $question->id;
+        $seed = 1;
 
-        foreach ($qdata->testcases as $testcase) {
-            $result = $testcase->test_question($quba, $question, 1);
+        $testcases = array();
+        $qtest = new stack_question_test(array('ans1' => 'x^3'));
+        $qtest->add_expected_result('odd', new stack_potentialresponse_tree_state(
+                1, true, 1, 0, '', array('odd-1-T')));
+        $testcases[] = $qtest;
+
+        $qtest = new stack_question_test(array('ans1' => 'x^2'));
+        $qtest->add_expected_result('odd', new stack_potentialresponse_tree_state(
+                1, true, 0, 0.4, '', array('odd-1-F')));
+        $testcases[] = $qtest;
+
+        // This unit test runs a question test, with an input name as
+        // the expected answer, which should work.
+        $qtest = new stack_question_test(array('ans2' => 'ans2'));
+        $qtest->add_expected_result('even', new stack_potentialresponse_tree_state(
+                1, true, 1, 0, '', array('even-1-T')));
+        $qdata->testcases[] = $qtest;
+
+        foreach ($testcases as $testcase) {
+            $result = $testcase->test_question($questionid, $seed, context_system::instance());
             $this->assertTrue($result->passed());
         }
     }
@@ -187,6 +209,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
     <sqrtsign>1</sqrtsign>
     <complexno>i</complexno>
     <inversetrig>cos-1</inversetrig>
+    <logicsymbol>lang</logicsymbol>
     <matrixparens>[</matrixparens>
     <variantsselectionseed></variantsselectionseed>
     <input>
@@ -211,6 +234,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
       <name>firsttree</name>
       <value>1</value>
       <autosimplify>1</autosimplify>
+      <feedbackstyle>1</feedbackstyle>
       <feedbackvariables>
         <text></text>
       </feedbackvariables>
@@ -304,6 +328,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
     <sqrtsign>1</sqrtsign>
     <complexno>i</complexno>
     <inversetrig>cos-1</inversetrig>
+    <logicsymbol>lang</logicsymbol>
     <matrixparens>[</matrixparens>
     <variantsselectionseed></variantsselectionseed>
     <input>
@@ -405,6 +430,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
         $expectedq->sqrtsign              = 1;
         $expectedq->complexno             = 'i';
         $expectedq->inversetrig           = 'cos-1';
+        $expectedq->logicsymbol           = 'lang';
         $expectedq->matrixparens          = '[';
         $expectedq->variantsselectionseed = '';
 
@@ -426,6 +452,7 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
 
         $expectedq->firsttreevalue              = 1;
         $expectedq->firsttreeautosimplify       = 1;
+        $expectedq->firsttreefeedbackstyle      = 1;
         $expectedq->firsttreefeedbackvariables  = '';
         $expectedq->firsttreeanswertest[0]      = 'EqualComAss';
         $expectedq->firsttreesans[0]            = 'ans1';
@@ -524,5 +551,4 @@ class qtype_stack_test extends qtype_stack_walkthrough_test_base {
         $this->assertEquals(array('prt1' => 2), $qtype->get_prt_names_from_question('[[feedback:prt1]]',
                 '[[feedback:prt1]]'));
     }
-
 }

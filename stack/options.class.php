@@ -63,6 +63,14 @@ class stack_options {
                 'caskey'     => 'make_arccos',
                 'castype'    => 'fun',
             ),
+            'logicsymbol'   => array(
+                'type'       => 'list',
+                'value'      => 'lang',
+                'strict'     => true,
+                'values'     => array('lang', 'symbol'),
+                'caskey'     => 'make_logic',
+                'castype'    => 'fun',
+            ),
             'floats'   => array(
                 'type'       => 'boolean',
                 'value'      => 1,
@@ -119,10 +127,10 @@ class stack_options {
 
         // Overright them from any input.
         foreach ($settings as $key => $val) {
-            if (!array_key_exists($key, $this->settings)) {
+            if (!array_key_exists($key, $this->options)) {
                 throw new stack_exception('stack_options construct: $key '.$key.' is not a valid option name.');
             } else {
-                $this->options[$key] = $val;
+                $this->options[$key]['value'] = $val;
             }
         }
     }
@@ -133,6 +141,7 @@ class stack_options {
         $this->set_option('multiplicationsign', $stackconfig->multiplicationsign);
         $this->set_option('complexno', $stackconfig->complexno);
         $this->set_option('inversetrig', $stackconfig->inversetrig);
+        $this->set_option('logicsymbol', $stackconfig->logicsymbol);
         $this->set_option('matrixparens', $stackconfig->matrixparens);
         $this->set_option('floats', (bool) $stackconfig->inputforbidfloat);
         $this->set_option('sqrtsign', (bool) $stackconfig->sqrtsign);
@@ -198,14 +207,14 @@ class stack_options {
 
                 if ('ex' == $opt['castype']) {
                     $names      .= ', '.$opt['caskey'];
-                    $commands   .= ', '.$opt['caskey'].':'.$value;
+                    $commands   .= stack_cas_session2::SEP . $opt['caskey'].':'.$value;
                 } else if ('exs' == $opt['castype']) {
                     $names      .= ', '.$opt['caskey'];
-                    $commands   .= ', '.$opt['caskey'].':"'.$value.'"';
+                    $commands   .= stack_cas_session2::SEP . $opt['caskey'].':"'.$value.'"';
                 } else if ('fun' == $opt['castype']) {
                     // Make sure these options are *strings*, otherwise they clash
                     // with Maxim names, particularly alias.
-                    $commands   .= ', '.$opt['caskey'].'("'.$value.'")';
+                    $commands   .= stack_cas_session2::SEP . $opt['caskey'].'("'.$value.'")';
                 }
             }
         }
@@ -282,6 +291,16 @@ class stack_options {
     }
 
     /**
+     * @return array of choices for the inverse trig select menu.
+     */
+    public static function get_logic_options() {
+        return array(
+            'lang'   => get_string('logicsymbollang', 'qtype_stack'),
+            'symbol' => get_string('logicsymbolsymbol', 'qtype_stack'),
+        );
+    }
+
+    /**
      * @return array of choices for the matrix prenthesis select menu.
      */
     public static function get_matrix_parens_options() {
@@ -302,6 +321,7 @@ class stack_options {
             '0' => get_string('showvalidationno', 'qtype_stack'),
             '1' => get_string('showvalidationyes', 'qtype_stack'),
             '2' => get_string('showvalidationyesnovars', 'qtype_stack'),
+            '3' => get_string('showvalidationcompact', 'qtype_stack'),
         );
     }
 }
